@@ -6,9 +6,8 @@ import AVFoundation
  * Please read the Capacitor iOS Plugin Development Guide
  * here: https://capacitor.ionicframework.com/docs/plugins/ios
  */
-@objc(CodeScannerPlugin)
-public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
-    
+@objc(CodeScanner)
+public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
     // セッションのインスタンス生成
     let captureSession = AVCaptureSession()
     var videoLayer: AVCaptureVideoPreviewLayer?
@@ -77,8 +76,8 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 self.codeView.layer.borderColor = UIColor.red.cgColor
                 self.codeView.frame = CGRect(x: 0, y: 0, width: 0, height: 0)
                 
-//                let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.tapGesture))
-//                self.codeView.addGestureRecognizer(tapGesture)
+                //                let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.tapGesture))
+                //                self.codeView.addGestureRecognizer(tapGesture)
                 
                 self.previewView.addSubview(self.codeView)
                 
@@ -111,9 +110,9 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
         }
     }
     
-//    @objc func tapGesture(sender:UITapGestureRecognizer) {
-//        NSLog("CAP: TAP" +  self.code)
-//    }
+    //    @objc func tapGesture(sender:UITapGestureRecognizer) {
+    //        NSLog("CAP: TAP" +  self.code)
+    //    }
     
     @objc func closeGesture(sender:UITapGestureRecognizer) {
         DispatchQueue.main.async {

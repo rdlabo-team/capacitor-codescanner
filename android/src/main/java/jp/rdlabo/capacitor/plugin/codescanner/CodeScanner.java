@@ -7,7 +7,7 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 
 @NativePlugin()
-public class CodeScannerPlugin extends Plugin {
+public class CodeScanner extends Plugin {
 
     @PluginMethod()
     public void echo(PluginCall call) {

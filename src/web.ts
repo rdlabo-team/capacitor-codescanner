@@ -1,10 +1,10 @@
 import { WebPlugin } from '@capacitor/core';
-import { CodeScannerPluginPlugin } from './definitions';
+import { CodeScannerPlugin } from './definitions';
 
-export class CodeScannerPluginWeb extends WebPlugin implements CodeScannerPluginPlugin {
+export class CodeScannerWeb extends WebPlugin implements CodeScannerPlugin {
   constructor() {
     super({
-      name: 'CodeScannerPlugin',
+      name: 'CodeScanner',
       platforms: ['web']
     });
   }
@@ -16,9 +16,9 @@ export class CodeScannerPluginWeb extends WebPlugin implements CodeScannerPlugin
   }
 }
 
-const CodeScannerPlugin = new CodeScannerPluginWeb();
+const CodeScanner = new CodeScannerWeb();
 
-export { CodeScannerPlugin };
+export { CodeScanner };
 
 import { registerWebPlugin } from '@capacitor/core';
-registerWebPlugin(CodeScannerPlugin);
+registerWebPlugin(CodeScanner);
