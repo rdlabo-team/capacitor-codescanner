@@ -1,3 +1,4 @@
+import { PluginListenerHandle } from '@capacitor/core';
 declare module "@capacitor/core" {
   interface PluginRegistry {
     CodeScannerPlugin: CodeScannerPluginPlugin;
@@ -5,5 +6,8 @@ declare module "@capacitor/core" {
 }
 
 export interface CodeScannerPluginPlugin {
-  echo(options: { value: string }): Promise<{value: string}>;
+  present(): Promise<{value: boolean}>;
+  addListener(eventName: 'CodeScannerCaptchaEvent', listenerFunc: (info: any) => {
+    code: string;
+  }): PluginListenerHandle;
 }
