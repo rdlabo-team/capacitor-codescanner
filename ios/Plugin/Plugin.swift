@@ -2,13 +2,12 @@ import Foundation
 import Capacitor
 import AVFoundation
 
-
 /**
  * Please read the Capacitor iOS Plugin Development Guide
  * here: https://capacitor.ionicframework.com/docs/plugins/ios
  */
 @objc(CodeScannerPlugin)
-public class ScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
+public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
     
     // セッションのインスタンス生成
     let captureSession = AVCaptureSession()
