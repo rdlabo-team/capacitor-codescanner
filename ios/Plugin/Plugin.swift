@@ -23,10 +23,10 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
         DispatchQueue.main.async {
             if let rootViewController = UIApplication.shared.keyWindow?.rootViewController {
                 // 検出エリア設定
-                let x: CGFloat = 0.05
-                let y: CGFloat = 0.3
-                let width: CGFloat = 0.9
-                let height: CGFloat = 0.15
+                let x: CGFloat = CGFloat(call.getFloat("detectionX") ?? 0.1)
+                let y: CGFloat = CGFloat(call.getFloat("detectionY") ?? 0.3)
+                let width: CGFloat = CGFloat(call.getFloat("detectionWidth") ?? 0.8)
+                let height: CGFloat = CGFloat(call.getFloat("detectionHeight") ?? 0.15)
                 
                 // 入力（背面カメラ）
                 if !self.isReady {
