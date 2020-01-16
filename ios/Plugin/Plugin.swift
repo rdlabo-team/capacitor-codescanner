@@ -23,9 +23,9 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
         DispatchQueue.main.async {
             if let rootViewController = UIApplication.shared.keyWindow?.rootViewController {
                 // 検出エリア設定
-                let x: CGFloat = CGFloat(call.getFloat("detectionX") ?? 0.1)
-                let y: CGFloat = CGFloat(call.getFloat("detectionY") ?? 0.3)
-                let width: CGFloat = CGFloat(call.getFloat("detectionWidth") ?? 0.8)
+                let x: CGFloat = CGFloat(call.getFloat("detectionX") ?? 0.2)
+                let y: CGFloat = CGFloat(call.getFloat("detectionY") ?? 0.35)
+                let width: CGFloat = CGFloat(call.getFloat("detectionWidth") ?? 0.6)
                 let height: CGFloat = CGFloat(call.getFloat("detectionHeight") ?? 0.15)
                 
                 // 入力（背面カメラ）
@@ -135,9 +135,6 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                     self.notifyListeners("CodeScannerCaptchaEvent", data: [
                         "code": metadata.stringValue!
                     ])
-                } else {
-                    // 認識しない時
-                    self.codeView!.frame = CGRect(x: 0, y: 0, width: 0, height: 0)
                 }
             }
         }
