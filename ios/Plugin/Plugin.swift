@@ -12,8 +12,7 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
     let captureSession = AVCaptureSession()
     var videoLayer: AVCaptureVideoPreviewLayer?
     
-    
-    var previewView: UIView!
+    var previewViewCtrl: UIViewController!
     var detectionArea: UIView!
     var codeView: UIView!
     var code: String!
@@ -54,26 +53,24 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 }
                 
                 // プレビュー表示
-                self.previewView = UIView()
-                self.previewView.backgroundColor = .black
-                self.previewView.frame = rootViewController.view.bounds
-                self.previewView.tag = 325973259 // rand
-                self.previewView.alpha = 0.0
-                UIView.animate(withDuration: 0.4, delay: 0.1, options: [.curveEaseIn], animations: {
-                    self.previewView.alpha = 1.0
-                }, completion: nil)
-                rootViewController.view.addSubview(self.previewView)
+                self.previewViewCtrl = UIViewController()
+                self.previewViewCtrl.modalPresentationStyle = .pageSheet
+                
+                self.previewViewCtrl.view.backgroundColor = .black
+                self.previewViewCtrl.view.frame = rootViewController.view.bounds
+                self.previewViewCtrl.view.tag = 325973259 // rand
+                self.bridge.viewController.present(self.previewViewCtrl, animated: true, completion: nil)
                 
                 self.videoLayer = AVCaptureVideoPreviewLayer.init(session: self.captureSession)
                 self.videoLayer?.frame = rootViewController.view.bounds
                 self.videoLayer?.videoGravity = AVLayerVideoGravity.resizeAspectFill
-                self.previewView.layer.addSublayer(self.videoLayer!)
+                self.previewViewCtrl.view.layer.addSublayer(self.videoLayer!)
                 
                 self.detectionArea = UIView()
                 self.detectionArea.frame = CGRect(x: rootViewController.view.frame.size.width * x, y: rootViewController.view.frame.size.height * y, width: rootViewController.view.frame.size.width * width, height: rootViewController.view.frame.size.height * height)
                 self.detectionArea.layer.borderColor = UIColor.red.cgColor
                 self.detectionArea.layer.borderWidth = 3
-                self.previewView.addSubview(self.detectionArea)
+                self.previewViewCtrl.view.addSubview(self.detectionArea)
                 
                 // 検出ビュー
                 self.codeView = UIView()
@@ -81,10 +78,7 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 self.codeView.layer.borderColor = UIColor.red.cgColor
                 self.codeView.frame = CGRect(x: 0, y: 0, width: 0, height: 0)
                 
-                //                let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.tapGesture))
-                //                self.codeView.addGestureRecognizer(tapGesture)
-                
-                self.previewView.addSubview(self.codeView)
+                self.previewViewCtrl.view.addSubview(self.codeView)
                 
                 // 閉じるボタン
                 let btnClose = UIButton()
@@ -95,8 +89,7 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 btnClose.layer.cornerRadius = btnClose.bounds.midY
                 btnClose.backgroundColor = .black
                 
-                btnClose.tag = 327985328732 // rand
-                self.previewView.addSubview(btnClose)
+                self.previewViewCtrl.view.addSubview(btnClose)
                 
                 let closeGesture = UITapGestureRecognizer(target: self, action: #selector(self.closeGesture))
                 btnClose.addGestureRecognizer(closeGesture)
@@ -115,9 +108,6 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
         }
     }
     
-    //    @objc func tapGesture(sender:UITapGestureRecognizer) {
-    //        NSLog("CAP: TAP" +  self.code)
-    //    }
     
     @objc func closeGesture(sender:UITapGestureRecognizer) {
         DispatchQueue.main.async {
@@ -125,16 +115,13 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                 if self.captureSession.isRunning {
                     self.captureSession.stopRunning()
                 }
-                if let previewView = rootViewController.view.viewWithTag(325973259) {
-                    previewView.removeFromSuperview()
-                }
+                rootViewController.dismiss(animated: true, completion: nil)
             }
         }
     }
     
     
     public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        // 複数のメタデータを検出できる
         for metadata in metadataObjects as! [AVMetadataMachineReadableCodeObject] {
             // コード内容の確認
             //            if Set(arrayLiteral: AVMetadataObject.ObjectType.qr, AVMetadataObject.ObjectType.code39, AVMetadataObject.ObjectType.ean13).contains(metadata.type) {
@@ -148,6 +135,9 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                     self.notifyListeners("CodeScannerCaptchaEvent", data: [
                         "code": metadata.stringValue!
                     ])
+                } else {
+                    // 認識しない時
+                    self.codeView!.frame = CGRect(x: 0, y: 0, width: 0, height: 0)
                 }
             }
         }
