@@ -22,7 +22,6 @@ __Now, This work at iOS only.__
 | **dogBody** | - | - | - |
 | **humanBody** | - | - | - |
 | **salientObject** | - | - | - |
-| **code128** | - | - | - |
 
 
 ## DONATE THIS PROJECT
