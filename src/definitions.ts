@@ -7,7 +7,7 @@ declare module "@capacitor/core" {
 
 export interface CodeScannerPlugin {
   present(): Promise<{value: boolean}>;
-  addListener(eventName: 'CodeScannerCaptchaEvent', listenerFunc: (info: any) => {
+  addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (info: any) => {
     code: string;
   }): PluginListenerHandle;
 }
