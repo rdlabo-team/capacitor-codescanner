@@ -4,24 +4,23 @@ __Now, This work at iOS only.__
 
 | CodeType | Web |  iOS | Android |
 |:-----------------:|:-----------------:|:-----------------:|:-----------------:|
-| **aztec** | - | - | - |
-| **code128** | - | - | - |
+| **aztec** | - | ◯ | - |
+| **code128** | - | ◯ | - |
 | **code39** | - | ◯ | - |
-| **code39Mod43** | - | - | - |
-| **detaMatrix** | - | - | - |
+| **code39Mod43** | - | ◯ | - |
+| **dataMatrix** | - | ◯ | - |
 | **ean13** | - | ◯ | - |
-| **ean8** | - | - | - |
-| **face** | - | - | - |
-| **code128** | - | - | - |
-| **interleaved2of5** | - | - | - |
-| **itf14** | - | - | - |
-| **pdf417** | - | - | - |
+| **ean8** | - | ◯ | - |
+| **face** | - | ◯ | - |
+| **interleaved2of5** | - | ◯ | - |
+| **itf14** | - | ◯ | - |
+| **pdf417** | - | ◯ | - |
 | **qr** | - | ◯ | - |
-| **upce** | - | - | - |
-| **catBody** | - | - | - |
-| **dogBody** | - | - | - |
-| **humanBody** | - | - | - |
-| **salientObject** | - | - | - |
+| **upce** | - | ◯ | - |
+| **catBody** | - | ◯ | - |
+| **dogBody** | - | ◯ | - |
+| **humanBody** | - | ◯ | - |
+| **salientObject** | - | ◯ | - |
 
 ![iOS ScreenShot](screenshot/ios.jpg)
 
@@ -92,5 +91,10 @@ interface AdOptions {
   detectionY?: number;
   detectionWidth?: number;
   detectionHeight?: number;
+  metadataObjectTypes?: Record<
+    'aztec' | 'code128' | 'code39' | 'code39Mod43' | 'code93' | 'dataMatrix'
+    | 'ean13' | 'ean8' | 'face' | 'interleaved2of5' | 'itf14' | 'pdf417'
+    | 'qr' | 'upce' | 'catBody' | 'dogBody' | 'humanBody' | 'salientObject'
+    , []>
 }
 ```
