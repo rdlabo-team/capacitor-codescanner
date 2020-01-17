@@ -1,6 +1,6 @@
 {
   "name": "@rdlabo/capacitor-codescanner",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Capacitor Plugin for Code Scanner",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",

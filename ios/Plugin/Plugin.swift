@@ -57,6 +57,8 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                             metadataObjectTypes.append(AVMetadataObject.ObjectType.code39Mod43)
                         case "dataMatrix":
                             metadataObjectTypes.append(AVMetadataObject.ObjectType.dataMatrix)
+                        case "ean13":
+                            metadataObjectTypes.append(AVMetadataObject.ObjectType.ean13)
                         case "ean8":
                             metadataObjectTypes.append(AVMetadataObject.ObjectType.ean8)
                         case "face":
@@ -93,7 +95,6 @@ public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
                     }
                     
                     metadataOutput.metadataObjectTypes = metadataObjectTypes
-                    metadataOutput.metadataObjectTypes = metadataOutput.availableMetadataObjectTypes
                     metadataOutput.rectOfInterest = CGRect(x: y,y: 1-x-width,width: height,height: width)
                     self.isReady = true
                 }
