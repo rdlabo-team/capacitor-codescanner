@@ -47,6 +47,7 @@ $ npm install --save @rdlabo/capacitor-codescanner
 ```typescript
 import { Plugins } from '@capacitor/core';
 const { CodeScanner } = Plugins;
+import { ScannerOption } from '@rdlabo/capacitor-codescanner';
 
 @Component({
   selector: 'app-root',
@@ -61,7 +62,13 @@ export class AppComponent implements OnInit {
     }
 
     openCodeScanner(){
-        CodeScanner.present();
+        const option: ScannerOption = {
+          detectionX: 0.2,
+          detectionY: 0.35,
+          detectionWidth: 0.6,
+          detectionHeight: 0.15,
+        };
+        CodeScanner.present(option);
     }
 }
 ```
@@ -69,10 +76,21 @@ export class AppComponent implements OnInit {
 ## APIs
 ### present(): Promise<{ value: boolean }>
 ```typescript
-CodeScanner.present();
+CodeScanner.present(ScannerOption);
 ```
 
 #### Event Listener
 ```typescript
 addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (info: any) => void): PluginListenerHandle;
+```
+
+## Options
+### ScannerOption
+```ts
+interface AdOptions {
+  detectionX?: number;
+  detectionY?: number;
+  detectionWidth?: number;
+  detectionHeight?: number;
+}
 ```
