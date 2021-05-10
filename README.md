@@ -25,14 +25,12 @@ npx cap sync
 ### present(...)
 
 ```typescript
-present(scannerOption: ScannerOption) => any
+present(scannerOption: ScannerOption) => Promise<void>
 ```
 
 | Param               | Type                                                    |
 | ------------------- | ------------------------------------------------------- |
 | **`scannerOption`** | <code><a href="#scanneroption">ScannerOption</a></code> |
-
-**Returns:** <code>any</code>
 
 --------------------
 
@@ -58,19 +56,19 @@ addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: st
 
 #### ScannerOption
 
-| Prop                      | Type                |
-| ------------------------- | ------------------- |
-| **`detectionX`**          | <code>number</code> |
-| **`detectionY`**          | <code>number</code> |
-| **`detectionWidth`**      | <code>number</code> |
-| **`detectionHeight`**     | <code>number</code> |
-| **`metadataObjectTypes`** | <code>any</code>    |
+| Prop                      | Type                                                                                                                                                                                                                                                                  |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`detectionX`**          | <code>number</code>                                                                                                                                                                                                                                                   |
+| **`detectionY`**          | <code>number</code>                                                                                                                                                                                                                                                   |
+| **`detectionWidth`**      | <code>number</code>                                                                                                                                                                                                                                                   |
+| **`detectionHeight`**     | <code>number</code>                                                                                                                                                                                                                                                   |
+| **`metadataObjectTypes`** | <code>Record&lt;"aztec" \| "code128" \| "code39" \| "code39Mod43" \| "code93" \| "dataMatrix" \| "ean13" \| "ean8" \| "face" \| "interleaved2of5" \| "itf14" \| "pdf417" \| "qr" \| "upce" \| "catBody" \| "dogBody" \| "humanBody" \| "salientObject", []&gt;</code> |
 
 
 #### PluginListenerHandle
 
-| Prop         | Type                      |
-| ------------ | ------------------------- |
-| **`remove`** | <code>() =&gt; any</code> |
+| Prop         | Type                                      |
+| ------------ | ----------------------------------------- |
+| **`remove`** | <code>() =&gt; Promise&lt;void&gt;</code> |
 
 </docgen-api>
