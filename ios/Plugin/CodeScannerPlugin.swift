@@ -15,13 +15,12 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
     var previewViewCtrl: UIViewController!
     var detectionArea: UIView!
     var codeView: UIView!
-    var code: String!
 
     var isReady = false
     var isMulti = false
 
     @objc func present(_ call: CAPPluginCall) {
-        self.isMulti = call.getBool("isMulti", false) ?? false
+        self.isMulti = call.getBool("isMulti", false)
         DispatchQueue.main.async {
             if let rootViewController = UIApplication.shared.keyWindow?.rootViewController {
                 // 検出エリア設定
@@ -108,7 +107,7 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 self.previewViewCtrl.view.backgroundColor = .black
                 self.previewViewCtrl.view.frame = rootViewController.view.bounds
                 self.previewViewCtrl.view.tag = 325973259 // rand
-                self.bridge.viewController.present(self.previewViewCtrl, animated: true, completion: nil)
+                self.bridge?.viewController?.present(self.previewViewCtrl, animated: true, completion: nil)
 
                 self.videoLayer = AVCaptureVideoPreviewLayer.init(session: self.captureSession)
                 self.videoLayer?.frame = rootViewController.view.bounds
@@ -151,9 +150,7 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                     }
                 }
 
-                call.success([
-                    "value": true
-                ])
+                call.resolve()
             }
         }
     }
@@ -183,10 +180,9 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
             if metadata.stringValue != nil {
                 // 検出位置を取得
                 let barCode = self.videoLayer?.transformedMetadataObject(for: metadata) as! AVMetadataMachineReadableCodeObject
-                if barCode.bounds.height != 0 && self.code != metadata.stringValue {
+                if barCode.bounds.height != 0 {
                     AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
                     self.codeView!.frame = barCode.bounds
-                    self.code = metadata.stringValue!
                     self.notifyListeners("CodeScannerCatchEvent", data: [
                         "code": metadata.stringValue!
                     ])
