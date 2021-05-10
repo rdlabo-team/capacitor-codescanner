@@ -4,11 +4,11 @@ import AVFoundation
 
 /**
  * Please read the Capacitor iOS Plugin Development Guide
- * here: https://capacitor.ionicframework.com/docs/plugins/ios
+ * here: https://capacitorjs.com/docs/plugins/ios
  */
-@objc(CodeScanner)
-public class CodeScanner: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
-    // セッションのインスタンス生成
+@objc(CodeScannerPlugin)
+public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
+   // セッションのインスタンス生成
     let captureSession = AVCaptureSession()
     var videoLayer: AVCaptureVideoPreviewLayer?
 

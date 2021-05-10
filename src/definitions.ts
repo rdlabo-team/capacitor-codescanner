@@ -1,15 +1,10 @@
 import { PluginListenerHandle } from '@capacitor/core';
-declare module "@capacitor/core" {
-  interface PluginRegistry {
-    CodeScanner: CodeScannerPlugin;
-  }
-}
 
 export interface CodeScannerPlugin {
-  present(): Promise<{value: boolean}>;
-  addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (info: any) => {
+  present(scannerOption: ScannerOption): Promise<void>;
+  addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: {
     code: string;
-  }): PluginListenerHandle;
+  }) => void): PluginListenerHandle;
 }
 
 export interface ScannerOption {
@@ -17,8 +12,7 @@ export interface ScannerOption {
   detectionY?: number;
   detectionWidth?: number;
   detectionHeight?: number;
-  metadataObjectTypes?: Record<
-    'aztec' | 'code128' | 'code39' | 'code39Mod43' | 'code93' | 'dataMatrix'
+  metadataObjectTypes?: Record<'aztec' | 'code128' | 'code39' | 'code39Mod43' | 'code93' | 'dataMatrix'
     | 'ean13' | 'ean8' | 'face' | 'interleaved2of5' | 'itf14' | 'pdf417'
     | 'qr' | 'upce' | 'catBody' | 'dogBody' | 'humanBody' | 'salientObject'
     , []>

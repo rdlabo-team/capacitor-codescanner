@@ -1,100 +1,76 @@
 # @rdlabo/capacitor-codescanner
-Capacitor CodeScanner is a native AdMob implementation for iOS.
-__Now, This work at iOS only.__
 
-| CodeType | Web |  iOS | Android |
-|:-----------------:|:-----------------:|:-----------------:|:-----------------:|
-| **aztec** | - | ◯ | - |
-| **code128** | - | ◯ | - |
-| **code39** | - | ◯ | - |
-| **code39Mod43** | - | ◯ | - |
-| **dataMatrix** | - | ◯ | - |
-| **ean13** | - | ◯ | - |
-| **ean8** | - | ◯ | - |
-| **face** | - | ◯ | - |
-| **interleaved2of5** | - | ◯ | - |
-| **itf14** | - | ◯ | - |
-| **pdf417** | - | ◯ | - |
-| **qr** | - | ◯ | - |
-| **upce** | - | ◯ | - |
-| **catBody** | - | ◯ | - |
-| **dogBody** | - | ◯ | - |
-| **humanBody** | - | ◯ | - |
-| **salientObject** | - | ◯ | - |
+Capacitor Plugin for Code Scanner
 
-![iOS ScreenShot](screenshot/ios.jpg)
+## Install
 
-## DONATE THIS PROJECT
-Thanks for considering donate.
-
-If this plugin help you, please share admob income. This help developing this plugin.This also help me easily determine how much time I would spend on the projects each month.
-
-|  | TYPE | AMOUNT | LINK |
-|:--:|:--:|:--:|:--:|
-| PayPal.me | Once | Any | [Donate](https://www.paypal.me/rdlabo) |
-| Paypal | Subscription | $15/month | [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GE7XTRB3S6M4S) |
-| Paypal | Subscription | $30/month | [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=ZV5NSRJ2MSMGN) |
-| Paypal | Subscription | $50/month | [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=5RKVFKZRE8F36) |
-
-
-## Installation
-```
-$ npm install --save @rdlabo/capacitor-codescanner
+```bash
+npm install @rdlabo/capacitor-codescanner
+npx cap sync
 ```
 
-## How To Use
+## API
+
+<docgen-index>
+
+* [`present(...)`](#present)
+* [`addListener(...)`](#addlistener)
+* [Interfaces](#interfaces)
+
+</docgen-index>
+
+<docgen-api>
+<!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
+
+### present(...)
+
 ```typescript
-import { Plugins } from '@capacitor/core';
-const { CodeScanner } = Plugins;
-import { ScannerOption } from '@rdlabo/capacitor-codescanner';
-
-@Component({
-  selector: 'app-root',
-  templateUrl: 'app.component.html',
-  styleUrls: ['app.component.scss']
-})
-export class AppComponent implements OnInit {
-    constructor(){
-        CodeScanner.addListener('CodeScannerCatchEvent', async (info: { code: string }) => {
-            console.log(info.code); // Get Code
-        });
-    }
-
-    openCodeScanner(){
-        const option: ScannerOption = {
-          detectionX: 0.2,
-          detectionY: 0.35,
-          detectionWidth: 0.6,
-          detectionHeight: 0.15,
-        };
-        CodeScanner.present(option);
-    }
-}
+present(scannerOption: ScannerOption) => any
 ```
 
-## APIs
-### present(): Promise<{ value: boolean }>
+| Param               | Type                                                    |
+| ------------------- | ------------------------------------------------------- |
+| **`scannerOption`** | <code><a href="#scanneroption">ScannerOption</a></code> |
+
+**Returns:** <code>any</code>
+
+--------------------
+
+
+### addListener(...)
+
 ```typescript
-CodeScanner.present(ScannerOption);
+addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: string; }) => void) => PluginListenerHandle
 ```
 
-#### Event Listener
-```typescript
-addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (info: any) => void): PluginListenerHandle;
-```
+| Param              | Type                                               |
+| ------------------ | -------------------------------------------------- |
+| **`eventName`**    | <code>"CodeScannerCatchEvent"</code>               |
+| **`listenerFunc`** | <code>(event: { code: string; }) =&gt; void</code> |
 
-## Options
-### ScannerOption
-```ts
-interface AdOptions {
-  detectionX?: number;
-  detectionY?: number;
-  detectionWidth?: number;
-  detectionHeight?: number;
-  metadataObjectTypes?: Record<
-    'aztec' | 'code128' | 'code39' | 'code39Mod43' | 'code93' | 'dataMatrix'
-    | 'ean13' | 'ean8' | 'face' | 'interleaved2of5' | 'itf14' | 'pdf417'
-    | 'qr' | 'upce' | 'catBody' | 'dogBody' | 'humanBody' | 'salientObject'
-    , []>
-}
-```
+**Returns:** <code><a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+
+--------------------
+
+
+### Interfaces
+
+
+#### ScannerOption
+
+| Prop                      | Type                |
+| ------------------------- | ------------------- |
+| **`detectionX`**          | <code>number</code> |
+| **`detectionY`**          | <code>number</code> |
+| **`detectionWidth`**      | <code>number</code> |
+| **`detectionHeight`**     | <code>number</code> |
+| **`metadataObjectTypes`** | <code>any</code>    |
+
+
+#### PluginListenerHandle
+
+| Prop         | Type                      |
+| ------------ | ------------------------- |
+| **`remove`** | <code>() =&gt; any</code> |
+
+</docgen-api>

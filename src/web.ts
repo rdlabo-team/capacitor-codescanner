@@ -1,24 +1,9 @@
 import { WebPlugin } from '@capacitor/core';
-import { CodeScannerPlugin, ScannerOption } from './definitions';
+
+import type { CodeScannerPlugin, ScannerOption } from './definitions';
 
 export class CodeScannerWeb extends WebPlugin implements CodeScannerPlugin {
-  constructor() {
-    super({
-      name: 'CodeScanner',
-      platforms: ['web']
-    });
-  }
-
-  async present(): Promise<{value: boolean}> {
-    return {
-      value: true,
-    }
+  async present(options: ScannerOption): Promise<void> {
+    console.log(options);
   }
 }
-
-const CodeScanner = new CodeScannerWeb();
-
-export { CodeScanner, ScannerOption };
-
-import { registerWebPlugin } from '@capacitor/core';
-registerWebPlugin(CodeScanner);
