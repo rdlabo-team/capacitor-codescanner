@@ -38,7 +38,7 @@ present(scannerOption: ScannerOption) => Promise<void>
 ### addListener(...)
 
 ```typescript
-addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: string; }) => void) => PluginListenerHandle
+addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: string; }) => void) => Promise<PluginListenerHandle>
 ```
 
 | Param              | Type                                               |
@@ -46,7 +46,7 @@ addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: st
 | **`eventName`**    | <code>"CodeScannerCatchEvent"</code>               |
 | **`listenerFunc`** | <code>(event: { code: string; }) =&gt; void</code> |
 
-**Returns:** <code><a href="#pluginlistenerhandle">PluginListenerHandle</a></code>
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
 
 --------------------
 
