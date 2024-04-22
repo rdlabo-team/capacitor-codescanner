@@ -4,7 +4,7 @@ export interface CodeScannerPlugin {
   present(scannerOption: ScannerOption): Promise<void>;
   addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: {
     code: string;
-  }) => void): PluginListenerHandle;
+  }) => void): Promise<PluginListenerHandle>;
 }
 
 export interface ScannerOption {
