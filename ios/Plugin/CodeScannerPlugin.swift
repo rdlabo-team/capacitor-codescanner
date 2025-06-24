@@ -7,7 +7,12 @@ import AVFoundation
  * here: https://capacitorjs.com/docs/plugins/ios
  */
 @objc(CodeScannerPlugin)
-public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate {
+public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate, CAPBridgedPlugin {
+    public let identifier = "CodeScannerPlugin" 
+    public let jsName = "CodeScanner" 
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "present", returnType: CAPPluginReturnPromise),
+    ] 
    // セッションのインスタンス生成
     let captureSession = AVCaptureSession()
     var videoLayer: AVCaptureVideoPreviewLayer?
