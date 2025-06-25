@@ -1,0 +1,17 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title> Tab One </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <section class="ion-padding ion-text-center">
+    <ion-button color="danger" (click)="present()">撮影開始</ion-button>
+  </section>
+
+  <ion-list>
+    @for (item of codes(); let i = $index; track i) {
+      <ion-item><ion-label>{{item}}</ion-label></ion-item>
+    }
+  </ion-list>
+</ion-content>

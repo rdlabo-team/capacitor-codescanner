@@ -1,0 +1,71 @@
+{
+  "name": "capacitor-facebook-login-tutorial",
+  "version": "0.0.1",
+  "author": "Ionic Framework",
+  "homepage": "https://ionicframework.com/",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e",
+    "cap": "ng build --configuration production && npx cap copy",
+    "lint-staged": "lint-staged",
+    "format": "prettier --parser typescript --single-quote --write \"./**/*.ts\""
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/common": "^20.0.4",
+    "@angular/core": "^20.0.4",
+    "@angular/forms": "^20.0.4",
+    "@angular/platform-browser": "^20.0.4",
+    "@angular/platform-browser-dynamic": "^20.0.4",
+    "@angular/router": "^20.0.4",
+    "@rdlabo/capacitor-codescanner": "file:../..",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@ionic/angular": "^8.4.1",
+    "rxjs": "~7.5.1",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/core": "^20.0.3",
+    "@angular-devkit/schematics": "^20.0.3",
+    "@angular/build": "^20.0.3",
+    "@angular/cli": "^20.0.3",
+    "@angular/compiler": "^20.0.4",
+    "@angular/compiler-cli": "^20.0.4",
+    "@angular/language-service": "^20.0.4",
+    "@capacitor/cli": "^7.0.0",
+    "@ionic/angular-toolkit": "^12.1.1",
+    "@kaizenplatform/prettier-config": "^0.1.0",
+    "@types/jasmine": "~5.1.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsdoc": "^48.2.1",
+    "eslint-plugin-prefer-arrow": "1.2.2",
+    "jasmine-core": "~5.1.0",
+    "jasmine-spec-reporter": "~5.0.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "typescript": "~5.8.3"
+  },
+  "description": "An Ionic project",
+  "pre-commit": [
+    "lint-staged"
+  ],
+  "lint-staged": {
+    "*.ts": [
+      "prettier --parser typescript --single-quote --write",
+      "git add"
+    ]
+  }
+}

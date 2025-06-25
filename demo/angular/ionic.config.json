@@ -1,0 +1,7 @@
+{
+  "name": "capacitor-code-scanner",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
