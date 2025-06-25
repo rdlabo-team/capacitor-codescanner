@@ -50,7 +50,7 @@ class CodeScannerPlugin : Plugin() {
         }
 
         // BottomSheetDialogFragmentを表示
-        implementation.present(activity, object : CodeScannerBottomSheetFragment.OnDismissListener {
+        implementation.present(activity, { eventName: String?, data: JSObject? -> this.notifyListeners(eventName, data) }, object : CodeScannerBottomSheetFragment.OnDismissListener {
             override fun onDismiss() {
                 val ret = JSObject()
                 ret.put("dismissed", true)

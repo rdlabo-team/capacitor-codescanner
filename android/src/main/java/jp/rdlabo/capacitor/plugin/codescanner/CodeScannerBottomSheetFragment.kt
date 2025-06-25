@@ -12,6 +12,8 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.camera.core.Camera
+import androidx.camera.core.CameraControl
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -20,6 +22,8 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.getcapacitor.JSObject
+import com.google.android.gms.common.util.BiConsumer
 import com.google.android.gms.tasks.Task
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.mlkit.vision.barcode.BarcodeScanner
@@ -27,6 +31,7 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -34,12 +39,19 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var dismissListener: OnDismissListener? = null
     private var previewView: PreviewView? = null
     private var cameraProvider: ProcessCameraProvider? = null
+    private var camera: Camera? = null
     private var isCameraStarted = false
+    private var isFlashOn = false
     private var cameraExecutor: ExecutorService? = null
     private var barcodeScanner: BarcodeScanner? = null
+    private var notifyListenersFunction: BiConsumer<String, JSObject>? = null
 
     interface OnDismissListener {
         fun onDismiss()
+    }
+
+    fun setNotifyListenersFunction(notifyFunction: BiConsumer<String, JSObject>) {
+        this.notifyListenersFunction = notifyFunction;
     }
 
     fun setOnDismissListener(listener: OnDismissListener?) {
@@ -158,13 +170,17 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
 
                 preview.surfaceProvider = previewView!!.surfaceProvider
                 cameraProvider?.unbindAll()
-                cameraProvider?.bindToLifecycle(
+                camera = cameraProvider?.bindToLifecycle(
                     this,
                     cameraSelector,
                     preview,
                     imageAnalysis
                 )
                 isCameraStarted = true
+
+                if (!this.isFlashOn()) {
+                    this.turnOnFlash()
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
                 Toast.makeText(requireContext(), "カメラの起動に失敗しました", Toast.LENGTH_SHORT)
@@ -195,6 +211,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                     for (barcode in barcodes) {
                         val rawValue = barcode.rawValue
                         if (rawValue != null) {
+                            notifyListeners("CodeScannerCatchEvent", JSObject().put("code", rawValue))
                             Log.d(
                                 TAG,
                                 "バーコード検出: " + rawValue + " (形式: " + barcode.format + ")"
@@ -220,6 +237,60 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         if (dismissListener != null) {
             dismissListener!!.onDismiss()
         }
+        if (this.isFlashOn()) {
+            this.turnOffFlash()
+        }
+    }
+
+    /**
+     * フラッシュライトをオンにする
+     */
+    fun turnOnFlash() {
+        if (camera != null && camera!!.cameraInfo.hasFlashUnit()) {
+            val future: ListenableFuture<Void> = camera!!.cameraControl.enableTorch(true)
+            future.addListener({
+                try {
+                    future.get()
+                    isFlashOn = true
+                    Log.d(TAG, "フラッシュライトがオンになりました")
+                } catch (e: Exception) {
+                    Log.e(TAG, "フラッシュライトのオンに失敗: ${e.message}")
+                }
+            }, ContextCompat.getMainExecutor(requireContext()))
+        } else {
+            Log.w(TAG, "フラッシュライトが利用できません")
+        }
+    }
+
+    /**
+     * フラッシュライトをオフにする
+     */
+    fun turnOffFlash() {
+        if (camera != null && camera!!.cameraInfo.hasFlashUnit()) {
+            val future: ListenableFuture<Void> = camera!!.cameraControl.enableTorch(false)
+            future.addListener({
+                try {
+                    future.get()
+                    isFlashOn = false
+                    Log.d(TAG, "フラッシュライトがオフになりました")
+                } catch (e: Exception) {
+                    Log.e(TAG, "フラッシュライトのオフに失敗: ${e.message}")
+                }
+            }, ContextCompat.getMainExecutor(requireContext()))
+        } else {
+            Log.w(TAG, "フラッシュライトが利用できません")
+        }
+    }
+
+    /**
+     * フラッシュライトがオンかどうかを取得
+     */
+    private fun isFlashOn(): Boolean {
+        return isFlashOn
+    }
+
+    protected fun notifyListeners(eventName: String, data: JSObject) {
+        notifyListenersFunction?.accept(eventName, data)
     }
 
     companion object {
