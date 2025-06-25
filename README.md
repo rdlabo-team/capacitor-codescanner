@@ -9,6 +9,55 @@ npm install @rdlabo/capacitor-codescanner
 npx cap sync
 ```
 
+
+## Usage
+
+```typescript
+import { CodeScanner } from '@rdlabo/capacitor-codescanner';
+
+// 基本的なQRコードスキャン
+const scanQRCode = async () => {
+  await CodeScanner.addListener('CodeScannerCatchEvent', (event) => {
+    console.log('スキャンされたコード:', event.code);
+  });
+
+  await CodeScanner.present({
+    detectionX: 0.2,
+    detectionY: 0.35,
+    detectionWidth: 0.6,
+    detectionHeight: 0.15,
+    isMulti: false,
+    CodeTypes: ['qr']
+  });
+};
+
+// 複数のバーコードタイプを連続スキャン
+const scanMultipleCodes = async () => {
+  await CodeScanner.addListener('CodeScannerCatchEvent', (event) => {
+    console.log('スキャンされたコード:', event.code);
+  });
+
+  await CodeScanner.present({
+    detectionX: 0.1,
+    detectionY: 0.3,
+    detectionWidth: 0.8,
+    detectionHeight: 0.2,
+    isMulti: true,
+    CodeTypes: ['qr', 'code39', 'ean13', 'code128']
+  });
+};
+```
+
+## Functions
+
+- **自動ライト制御**: スキャナー起動時に自動的にフラッシュライトが点灯します
+- **バイブレーション**: コード検出時にバイブレーションでフィードバックを提供します
+- **検出エリア表示**: 赤い枠で検出エリアを視覚的に表示します
+- **検出コードハイライト**: 検出されたコードを赤い枠でハイライト表示します
+- **閉じるボタン**: 右上の「✕」ボタンでスキャナーを閉じることができます
+- **複数スキャンモード**: `isMulti: true`で複数のコードを連続してスキャンできます
+
+
 ## API
 
 <docgen-index>
@@ -57,13 +106,13 @@ addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: st
 
 #### ScannerOption
 
-| Prop                      | Type                                                                                                                                                                                                                                                                                         |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`detectionX`**          | <code>number</code>                                                                                                                                                                                                                                                                          |
-| **`detectionY`**          | <code>number</code>                                                                                                                                                                                                                                                                          |
-| **`detectionWidth`**      | <code>number</code>                                                                                                                                                                                                                                                                          |
-| **`detectionHeight`**     | <code>number</code>                                                                                                                                                                                                                                                                          |
-| **`metadataObjectTypes`** | <code><a href="#record">Record</a>&lt;'aztec' \| 'code128' \| 'code39' \| 'code39Mod43' \| 'code93' \| 'dataMatrix' \| 'ean13' \| 'ean8' \| 'face' \| 'interleaved2of5' \| 'itf14' \| 'pdf417' \| 'qr' \| 'upce' \| 'catBody' \| 'dogBody' \| 'humanBody' \| 'salientObject' , []&gt;</code> |
+| Prop                      | Type                               |
+| ------------------------- | ---------------------------------- |
+| **`detectionX`**          | <code>number</code>                |
+| **`detectionY`**          | <code>number</code>                |
+| **`detectionWidth`**      | <code>number</code>                |
+| **`detectionHeight`**     | <code>number</code>                |
+| **`metadataObjectTypes`** | <code>MetadataObjectTypes[]</code> |
 
 
 #### PluginListenerHandle
@@ -76,10 +125,8 @@ addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: st
 ### Type Aliases
 
 
-#### Record
+#### MetadataObjectTypes
 
-Construct a type with a set of properties K of type T
-
-<code>{ [P in K]: T; }</code>
+<code>'aztec' | 'code128' | 'code39' | 'code39Mod43' | 'code93' | 'dataMatrix' | 'ean13' | 'ean8' | 'face' | 'interleaved2of5' | 'itf14' | 'pdf417' | 'qr' | 'upce' | 'catBody' | 'dogBody' | 'humanBody' | 'salientObject'</code>
 
 </docgen-api>
