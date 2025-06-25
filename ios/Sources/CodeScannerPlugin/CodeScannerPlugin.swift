@@ -8,12 +8,12 @@ import AVFoundation
  */
 @objc(CodeScannerPlugin)
 public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegate, CAPBridgedPlugin {
-    public let identifier = "CodeScannerPlugin" 
-    public let jsName = "CodeScanner" 
+    public let identifier = "CodeScannerPlugin"
+    public let jsName = "CodeScanner"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "present", returnType: CAPPluginReturnPromise),
-    ] 
-   // セッションのインスタンス生成
+        CAPPluginMethod(name: "present", returnType: CAPPluginReturnPromise)
+    ]
+    // セッションのインスタンス生成
     let captureSession = AVCaptureSession()
     var videoLayer: AVCaptureVideoPreviewLayer?
 
@@ -101,7 +101,7 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                     }
 
                     metadataOutput.metadataObjectTypes = metadataObjectTypes
-                    metadataOutput.rectOfInterest = CGRect(x: y,y: 1-x-width,width: height,height: width)
+                    metadataOutput.rectOfInterest = CGRect(x: y, y: 1-x-width, width: height, height: width)
                     self.isReady = true
                 }
 
@@ -147,7 +147,6 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 let closeGesture = UITapGestureRecognizer(target: self, action: #selector(self.closeGesture))
                 btnClose.addGestureRecognizer(closeGesture)
 
-
                 DispatchQueue.global(qos: .userInitiated).async {
                     if !self.captureSession.isRunning {
                         self.captureSession.startRunning()
@@ -160,8 +159,7 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
         }
     }
 
-
-    @objc func closeGesture(sender:UITapGestureRecognizer) {
+    @objc func closeGesture(sender: UITapGestureRecognizer) {
         self.closeCamera()
     }
 
@@ -176,7 +174,6 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
             }
         }
     }
-
 
     public func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         for metadata in metadataObjects as! [AVMetadataMachineReadableCodeObject] {
@@ -200,26 +197,25 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
         }
     }
 
-
     public func toggleLight(launch: Bool) {
         DispatchQueue.main.async {
-          let avCaptureDevice = AVCaptureDevice.default(for: AVMediaType.video)
-          if avCaptureDevice!.hasTorch, avCaptureDevice!.isTorchAvailable {
-            do {
-                try avCaptureDevice!.lockForConfiguration()
+            let avCaptureDevice = AVCaptureDevice.default(for: AVMediaType.video)
+            if avCaptureDevice!.hasTorch, avCaptureDevice!.isTorchAvailable {
+                do {
+                    try avCaptureDevice!.lockForConfiguration()
 
-                if (launch) {
-                  print("light launch")
-                  avCaptureDevice!.torchMode = .on
-                } else {
-                  print("light dissmiss")
-                  avCaptureDevice!.torchMode = .off
+                    if launch {
+                        print("light launch")
+                        avCaptureDevice!.torchMode = .on
+                    } else {
+                        print("light dissmiss")
+                        avCaptureDevice!.torchMode = .off
+                    }
+                    avCaptureDevice!.unlockForConfiguration()
+                } catch let error {
+                    print(error)
                 }
-                avCaptureDevice!.unlockForConfiguration()
-            } catch let error {
-              print(error)
             }
-          }
         }
-      }
+    }
 }
