@@ -1,9 +1,13 @@
 package jp.rdlabo.capacitor.plugin.codescanner
 
 import android.Manifest
+import android.content.Context
 import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -323,6 +327,8 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                             
                             if (isInDetectionArea) {
                                 Log.d(TAG, "検出範囲内のバーコード: $rawValue")
+                                // バイブレーション実行
+                                vibrate()
                                 // 検出されたバーコードの枠線を表示
                                 showCodeDetectionFrame(barcode)
                                 
@@ -560,6 +566,36 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
 
     protected fun notifyListeners(eventName: String, data: JSObject) {
         notifyListenersFunction?.accept(eventName, data)
+    }
+
+    /**
+     * バイブレーション機能を実行
+     */
+    private fun vibrate() {
+        try {
+            val vibrator: Vibrator = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                val vibratorManager = requireContext().getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vibratorManager.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+
+            if (vibrator.hasVibrator()) {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    val vibrationEffect = VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
+                    vibrator.vibrate(vibrationEffect)
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator.vibrate(100)
+                }
+                Log.d(TAG, "バイブレーション実行")
+            } else {
+                Log.w(TAG, "バイブレーション機能が利用できません")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "バイブレーション実行エラー: ${e.message}")
+        }
     }
 
     companion object {
