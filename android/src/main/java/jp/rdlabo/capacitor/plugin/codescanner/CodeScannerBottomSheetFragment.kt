@@ -166,6 +166,25 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         return view
     }
 
+    override fun onStart() {
+        super.onStart()
+        
+        // BottomSheetBehaviorを使用して高さを設定
+        val bottomSheet = dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.let { sheet ->
+            val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
+            behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            behavior.isDraggable = true
+            behavior.isHideable = true
+            behavior.skipCollapsed = false
+            
+            // 高さを90%に設定
+            val layoutParams = sheet.layoutParams
+            layoutParams.height = (resources.displayMetrics.heightPixels * 0.9).toInt()
+            sheet.layoutParams = layoutParams
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         // モーダルが表示されたら自動的にカメラを開始
