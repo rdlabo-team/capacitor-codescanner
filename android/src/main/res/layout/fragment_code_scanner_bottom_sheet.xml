@@ -11,6 +11,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Detection area overlay -->
+    <View
+        android:id="@+id/detection_area"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/detection_area_border" />
+
+    <!-- Detected code overlay -->
+    <View
+        android:id="@+id/code_view"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/code_detection_border"
+        android:visibility="gone" />
+
     <!-- Overlay for controls -->
     <LinearLayout
         android:layout_width="match_parent"

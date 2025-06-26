@@ -35,6 +35,7 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import android.widget.RelativeLayout
 
 class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var dismissListener: OnDismissListener? = null
@@ -48,10 +49,18 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var notifyListenersFunction: BiConsumer<String, JSObject>? = null
     private var isMulti = false
     private var codeTypes: JSArray = JSArray.from(arrayOf("qr", "code39", "ean13"))
-    private var detectionX: Int? = null
-    private var detectionY: Int? = null
-    private var detectionWidth: Int? = null
-    private var detectionHeight: Int? = null
+    private var detectionX: Float = 0.2f
+    private var detectionY: Float = 0.35f
+    private var detectionWidth: Float = 0.6f
+    private var detectionHeight: Float = 0.15f
+    
+    // UI elements for detection area and code view
+    private var detectionAreaView: View? = null
+    private var codeView: View? = null
+    
+    // 画像サイズを保存
+    private var imageWidth: Int = 0
+    private var imageHeight: Int = 0
 
     interface OnDismissListener {
         fun onDismiss()
@@ -75,10 +84,10 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     ) {
         this.isMulti = isMulti
         this.codeTypes = codeTypes
-        this.detectionX = detectionX.toInt()
-        this.detectionY = detectionY.toInt()
-        this.detectionWidth = detectionWidth.toInt()
-        this.detectionHeight = detectionHeight.toInt()
+        this.detectionX = detectionX
+        this.detectionY = detectionY
+        this.detectionWidth = detectionWidth
+        this.detectionHeight = detectionHeight
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -146,6 +155,10 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
             dismiss()
         }
 
+        // 検出範囲とコードビューの参照を取得
+        detectionAreaView = view.findViewById(R.id.detection_area)
+        codeView = view.findViewById(R.id.code_view)
+
         return view
     }
 
@@ -209,7 +222,6 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                     Preview.Builder().build()
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-
                 // ImageAnalysisを追加してバーコード検出
                 val imageAnalysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
@@ -227,6 +239,9 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 )
                 isCameraStarted = true
 
+                // 検出範囲の枠線を設定
+                setupDetectionArea()
+
                 if (!this.isFlashOn()) {
                     this.turnOnFlash()
                 }
@@ -236,6 +251,41 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                     .show()
             }
         }, ContextCompat.getMainExecutor(requireContext()))
+    }
+
+    private fun setupDetectionArea() {
+        // 検出範囲の枠線を表示
+        detectionAreaView?.let { view ->
+            // ビューのサイズが確定するまで待つ
+            view.post {
+                val parent = view.parent as? ViewGroup ?: return@post
+                
+                // プレビュービューの実際のサイズを使用
+                val previewView = previewView ?: return@post
+                val previewWidth = previewView.width
+                val previewHeight = previewView.height
+                
+                if (previewWidth == 0 || previewHeight == 0) {
+                    Log.w(TAG, "プレビュービューのサイズが0です")
+                    return@post
+                }
+                
+                val x = (previewWidth * detectionX).toInt()
+                val y = (previewHeight * detectionY).toInt()
+                val width = (previewWidth * detectionWidth).toInt()
+                val height = (previewHeight * detectionHeight).toInt()
+                
+                val params = view.layoutParams as RelativeLayout.LayoutParams
+                params.leftMargin = x
+                params.topMargin = y
+                params.width = width
+                params.height = height
+                view.layoutParams = params
+                view.requestLayout()
+                
+                Log.d(TAG, "検出範囲枠線設定: x=$x, y=$y, width=$width, height=$height")
+            }
+        }
     }
 
     private fun stopCamera() {
@@ -254,22 +304,41 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 imageProxy.image!!,
                 imageProxy.imageInfo.rotationDegrees
             )
+            
+            // 画像サイズと回転を保存
+            imageWidth = image.width
+            imageHeight = image.height
+            val rotation = imageProxy.imageInfo.rotationDegrees
 
             barcodeScanner!!.process(image)
                 .addOnSuccessListener { barcodes: List<Barcode> ->
                     for (barcode in barcodes) {
                         val rawValue = barcode.rawValue
                         if (rawValue != null) {
-                            notifyListeners("CodeScannerCatchEvent", JSObject().put("code", rawValue))
-                            Log.d(
-                                TAG,
-                                "バーコード検出: " + rawValue + " (形式: " + barcode.format + ")"
-                            )
-                            if (!isMulti) {
-                                if (dismissListener != null) {
-                                    dismissListener!!.onDismiss()
+                            Log.d(TAG, "バーコード検出: $rawValue (形式: ${barcode.format})")
+                            
+                            // 検出範囲内かどうかをチェック
+                            val isInDetectionArea = isBarcodeInDetectionArea(barcode, rotation)
+                            Log.d(TAG, "検出範囲チェック結果: $isInDetectionArea")
+                            
+                            if (isInDetectionArea) {
+                                Log.d(TAG, "検出範囲内のバーコード: $rawValue")
+                                // 検出されたバーコードの枠線を表示
+                                showCodeDetectionFrame(barcode)
+                                
+                                notifyListeners("CodeScannerCatchEvent", JSObject().put("code", rawValue))
+                                Log.d(
+                                    TAG,
+                                    "バーコード検出: " + rawValue + " (形式: " + barcode.format + ")"
+                                )
+                                if (!isMulti) {
+                                    if (dismissListener != null) {
+                                        dismissListener!!.onDismiss()
+                                    }
+                                    dismiss()
                                 }
-                                dismiss()
+                            } else {
+                                Log.d(TAG, "検出範囲外のバーコード: $rawValue - 無視します")
                             }
                         }
                     }
@@ -283,6 +352,151 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 .addOnCompleteListener { task: Task<List<Barcode?>?>? ->
                     imageProxy.close()
                 }
+        }
+    }
+
+    private fun isBarcodeInDetectionArea(barcode: Barcode, rotation: Int): Boolean {
+        // バーコードの境界ボックスを取得
+        val boundingBox = barcode.boundingBox ?: return false
+        
+        // プレビュービューのサイズを取得
+        val previewView = previewView ?: return false
+        
+        // プレビュービューの実際の表示サイズを取得
+        val previewWidth = previewView.width
+        val previewHeight = previewView.height
+        
+        if (previewWidth == 0 || previewHeight == 0) {
+            Log.w(TAG, "プレビュービューのサイズが0です")
+            return false
+        }
+        
+        // 検出範囲の境界を計算（プレビュービュー内での相対座標）
+        val detectionLeft: Int
+        val detectionTop: Int
+        val detectionRight: Int
+        val detectionBottom: Int
+        
+        when (rotation) {
+            0 -> {
+                // 0度回転（通常の横向き）
+                detectionLeft = (previewWidth * detectionX).toInt()
+                detectionTop = (previewHeight * detectionY).toInt()
+                detectionRight = detectionLeft + (previewWidth * detectionWidth).toInt()
+                detectionBottom = detectionTop + (previewHeight * detectionHeight).toInt()
+            }
+            90 -> {
+                // 90度回転（縦向き）
+                detectionLeft = (previewWidth * detectionY).toInt()
+                detectionTop = (previewHeight * (1 - detectionX - detectionWidth)).toInt()
+                detectionRight = detectionLeft + (previewWidth * detectionHeight).toInt()
+                detectionBottom = detectionTop + (previewHeight * detectionWidth).toInt()
+            }
+            180 -> {
+                // 180度回転
+                detectionLeft = (previewWidth * (1 - detectionX - detectionWidth)).toInt()
+                detectionTop = (previewHeight * (1 - detectionY - detectionHeight)).toInt()
+                detectionRight = detectionLeft + (previewWidth * detectionWidth).toInt()
+                detectionBottom = detectionTop + (previewHeight * detectionHeight).toInt()
+            }
+            270 -> {
+                // 270度回転
+                detectionLeft = (previewWidth * (1 - detectionY - detectionHeight)).toInt()
+                detectionTop = (previewHeight * (1 - detectionX - detectionWidth)).toInt()
+                detectionRight = detectionLeft + (previewWidth * detectionHeight).toInt()
+                detectionBottom = detectionTop + (previewHeight * detectionWidth).toInt()
+            }
+            else -> {
+                // その他の回転角度
+                detectionLeft = (previewWidth * detectionX).toInt()
+                detectionTop = (previewHeight * detectionY).toInt()
+                detectionRight = detectionLeft + (previewWidth * detectionWidth).toInt()
+                detectionBottom = detectionTop + (previewHeight * detectionHeight).toInt()
+            }
+        }
+        
+        // MLKitの座標系からプレビュービューの座標系に変換
+        if (imageWidth == 0 || imageHeight == 0) {
+            Log.w(TAG, "画像サイズが0です")
+            return false
+        }
+        
+        // カメラの回転を考慮した座標変換（プレビュービュー内での相対座標）
+        val barcodeCenterX: Int
+        val barcodeCenterY: Int
+        
+        when (rotation) {
+            0 -> {
+                // 0度回転（通常の横向き）
+                barcodeCenterX = (boundingBox.centerX() * previewWidth / imageWidth).toInt()
+                barcodeCenterY = (boundingBox.centerY() * previewHeight / imageHeight).toInt()
+            }
+            90 -> {
+                // 90度回転（縦向き）
+                barcodeCenterX = ((imageHeight - boundingBox.centerY()) * previewWidth / imageHeight).toInt()
+                barcodeCenterY = ((imageWidth - boundingBox.centerX()) * previewHeight / imageWidth).toInt()
+                Log.d(TAG, "90度回転座標変換詳細:")
+                Log.d(TAG, "  boundingBox.centerX()=${boundingBox.centerX()}, boundingBox.centerY()=${boundingBox.centerY()}")
+                Log.d(TAG, "  imageWidth=$imageWidth, imageHeight=$imageHeight")
+                Log.d(TAG, "  previewWidth=$previewWidth, previewHeight=$previewHeight")
+                Log.d(TAG, "  X計算: (${imageHeight} - ${boundingBox.centerY()}) * ${previewWidth} / ${imageHeight} = ${(imageHeight - boundingBox.centerY()) * previewWidth / imageHeight}")
+                Log.d(TAG, "  Y計算: (${imageWidth} - ${boundingBox.centerX()}) * ${previewHeight} / ${imageWidth} = ${(imageWidth - boundingBox.centerX()) * previewHeight / imageWidth}")
+            }
+            180 -> {
+                // 180度回転
+                barcodeCenterX = ((imageWidth - boundingBox.centerX()) * previewWidth / imageWidth).toInt()
+                barcodeCenterY = ((imageHeight - boundingBox.centerY()) * previewHeight / imageHeight).toInt()
+            }
+            270 -> {
+                // 270度回転
+                barcodeCenterX = ((imageHeight - boundingBox.centerY()) * previewWidth / imageHeight).toInt()
+                barcodeCenterY = ((imageWidth - boundingBox.centerX()) * previewHeight / imageWidth).toInt()
+            }
+            else -> {
+                // その他の回転角度
+                barcodeCenterX = (boundingBox.centerX() * previewWidth / imageWidth).toInt()
+                barcodeCenterY = (boundingBox.centerY() * previewHeight / imageHeight).toInt()
+            }
+        }
+        
+        // デバッグ情報を出力
+        Log.d(TAG, "プレビューサイズ: width=$previewWidth, height=$previewHeight")
+        Log.d(TAG, "画像サイズ: width=$imageWidth, height=$imageHeight")
+        Log.d(TAG, "回転角度: $rotation")
+        Log.d(TAG, "検出範囲: left=$detectionLeft, top=$detectionTop, right=$detectionRight, bottom=$detectionBottom")
+        Log.d(TAG, "バーコード中心(変換前): x=${boundingBox.centerX()}, y=${boundingBox.centerY()}")
+        Log.d(TAG, "バーコード中心(変換後): x=$barcodeCenterX, y=$barcodeCenterY")
+        Log.d(TAG, "バーコード境界: left=${boundingBox.left}, top=${boundingBox.top}, right=${boundingBox.right}, bottom=${boundingBox.bottom}")
+        
+        val isInRange = barcodeCenterX >= detectionLeft && 
+               barcodeCenterX <= detectionRight && 
+               barcodeCenterY >= detectionTop && 
+               barcodeCenterY <= detectionBottom
+        
+        Log.d(TAG, "検出範囲内: $isInRange")
+        Log.d(TAG, "座標チェック詳細:")
+        Log.d(TAG, "  X座標: $barcodeCenterX >= $detectionLeft && $barcodeCenterX <= $detectionRight = ${barcodeCenterX >= detectionLeft && barcodeCenterX <= detectionRight}")
+        Log.d(TAG, "  Y座標: $barcodeCenterY >= $detectionTop && $barcodeCenterY <= $detectionBottom = ${barcodeCenterY >= detectionTop && barcodeCenterY <= detectionBottom}")
+        
+        return isInRange
+    }
+
+    private fun showCodeDetectionFrame(barcode: Barcode) {
+        val boundingBox = barcode.boundingBox ?: return
+        
+        codeView?.let { view ->
+            val params = view.layoutParams as RelativeLayout.LayoutParams
+            params.leftMargin = boundingBox.left
+            params.topMargin = boundingBox.top
+            params.width = boundingBox.width()
+            params.height = boundingBox.height()
+            view.layoutParams = params
+            view.visibility = View.VISIBLE
+            
+            // 3秒後に枠線を非表示にする
+            view.postDelayed({
+                view.visibility = View.GONE
+            }, 3000)
         }
     }
 
