@@ -2,6 +2,8 @@
 
 Capacitor Plugin for Code Scanner
 
+This is a barcode reader created for specific use cases. Unlike other Capacitor barcode reader plugins, this plugin opens a modal and performs scanning within it. Therefore, there is no need to manipulate web assets.
+
 ## Install
 
 ```bash
@@ -50,12 +52,12 @@ const scanMultipleCodes = async () => {
 
 ## Functions
 
-- **自動ライト制御**: スキャナー起動時に自動的にフラッシュライトが点灯します
-- **バイブレーション**: コード検出時にバイブレーションでフィードバックを提供します
-- **検出エリア表示**: 赤い枠で検出エリアを視覚的に表示します
-- **検出コードハイライト**: 検出されたコードを赤い枠でハイライト表示します
-- **閉じるボタン**: 右上の「✕」ボタンでスキャナーを閉じることができます
-- **複数スキャンモード**: `isMulti: true`で複数のコードを連続してスキャンできます
+- **Automatic Light Control**: Flashlight automatically turns on when the scanner starts
+- **Vibration**: Provides vibration feedback when a code is detected
+- **Detection Area Display**: Visually displays the detection area with a red frame
+- **Detected Code Highlighting**: Highlights detected codes with a red frame
+- **Close Button**: You can close the scanner with the "✕" button in the upper right corner
+- **Multiple Scan Mode**: You can continuously scan multiple codes with `isMulti: true`
 
 
 ## API
