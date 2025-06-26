@@ -22,6 +22,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.google.android.gms.common.util.BiConsumer
 import com.google.android.gms.tasks.Task
@@ -46,6 +47,11 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var barcodeScanner: BarcodeScanner? = null
     private var notifyListenersFunction: BiConsumer<String, JSObject>? = null
     private var isMulti = false
+    private var codeTypes: JSArray = JSArray.from(arrayOf("qr", "code39", "ean13"))
+    private var detectionX: Int? = null
+    private var detectionY: Int? = null
+    private var detectionWidth: Int? = null
+    private var detectionHeight: Int? = null
 
     interface OnDismissListener {
         fun onDismiss()
@@ -59,8 +65,20 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         this.dismissListener = listener
     }
 
-    fun setIsMulti(isMulti: Boolean) {
+    fun setCallSettings(
+        isMulti: Boolean,
+        codeTypes: JSArray,
+        detectionX: Float,
+        detectionY: Float,
+        detectionWidth: Float,
+        detectionHeight: Float
+    ) {
         this.isMulti = isMulti
+        this.codeTypes = codeTypes
+        this.detectionX = detectionX.toInt()
+        this.detectionY = detectionY.toInt()
+        this.detectionWidth = detectionWidth.toInt()
+        this.detectionHeight = detectionHeight.toInt()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,27 +86,49 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         // Material 3のBottom sheetスタイルを設定
         setStyle(STYLE_NORMAL, R.style.Material3BottomSheetDialog)
 
-
-        // MLKitバーコードスキャナーの初期化
-        val options = BarcodeScannerOptions.Builder()
-            .setBarcodeFormats(
-                Barcode.FORMAT_QR_CODE,
-                Barcode.FORMAT_CODE_39,
-                Barcode.FORMAT_CODE_128,
-                Barcode.FORMAT_EAN_13,
-                Barcode.FORMAT_EAN_8,
-                Barcode.FORMAT_UPC_A,
-                Barcode.FORMAT_UPC_E,
-                Barcode.FORMAT_PDF417,
-                Barcode.FORMAT_DATA_MATRIX,
-                Barcode.FORMAT_AZTEC
-            )
-            .build()
-        barcodeScanner = BarcodeScanning.getClient(options)
-
-
         // カメラエグゼキュータの初期化
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    private fun createBarcodeScannerOptions(): BarcodeScannerOptions {
+        val formats = mutableListOf<Int>()
+        
+        for (i in 0 until codeTypes.length()) {
+            val codeType = codeTypes.getString(i)
+            when (codeType) {
+                "aztec" -> formats.add(Barcode.FORMAT_AZTEC)
+                "code128" -> formats.add(Barcode.FORMAT_CODE_128)
+                "code39" -> formats.add(Barcode.FORMAT_CODE_39)
+                "code39Mod43" -> formats.add(Barcode.FORMAT_CODE_39)
+                "code93" -> formats.add(Barcode.FORMAT_CODE_93)
+                "dataMatrix" -> formats.add(Barcode.FORMAT_DATA_MATRIX)
+                "ean13" -> formats.add(Barcode.FORMAT_EAN_13)
+                "ean8" -> formats.add(Barcode.FORMAT_EAN_8)
+                "interleaved2of5" -> formats.add(Barcode.FORMAT_ITF)
+                "itf14" -> formats.add(Barcode.FORMAT_ITF)
+                "pdf417" -> formats.add(Barcode.FORMAT_PDF417)
+                "qr" -> formats.add(Barcode.FORMAT_QR_CODE)
+                "upce" -> formats.add(Barcode.FORMAT_UPC_E)
+                else -> Log.w(TAG, "未対応のバーコードタイプ: $codeType")
+            }
+        }
+        
+        // デフォルトのフォーマットを追加（何も指定されていない場合）
+        if (formats.isEmpty()) {
+            formats.addAll(listOf(
+                Barcode.FORMAT_QR_CODE,
+                Barcode.FORMAT_CODE_39,
+                Barcode.FORMAT_EAN_13
+            ))
+        }
+        
+        val builder = BarcodeScannerOptions.Builder()
+        if (formats.isNotEmpty()) {
+            val firstFormat = formats[0]
+            val remainingFormats = formats.drop(1).toIntArray()
+            builder.setBarcodeFormats(firstFormat, *remainingFormats)
+        }
+        return builder.build()
     }
 
     override fun onCreateView(
@@ -148,6 +188,10 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
             Toast.makeText(requireContext(), "カメラ権限が必要です", Toast.LENGTH_SHORT).show()
             return
         }
+
+        // MLKitバーコードスキャナーの初期化
+        val options = createBarcodeScannerOptions()
+        barcodeScanner = BarcodeScanning.getClient(options)
 
         val cameraPreviewContainer = view!!.findViewById<FrameLayout>(R.id.camera_preview) ?: return
 
