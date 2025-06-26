@@ -112,6 +112,7 @@ addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: st
 | **`detectionY`**          | <code>number</code>                |
 | **`detectionWidth`**      | <code>number</code>                |
 | **`detectionHeight`**     | <code>number</code>                |
+| **`isMulti`**             | <code>boolean</code>               |
 | **`metadataObjectTypes`** | <code>MetadataObjectTypes[]</code> |
 
 

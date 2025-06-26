@@ -45,6 +45,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var cameraExecutor: ExecutorService? = null
     private var barcodeScanner: BarcodeScanner? = null
     private var notifyListenersFunction: BiConsumer<String, JSObject>? = null
+    private var isMulti = false
 
     interface OnDismissListener {
         fun onDismiss()
@@ -56,6 +57,10 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
 
     fun setOnDismissListener(listener: OnDismissListener?) {
         this.dismissListener = listener
+    }
+
+    fun setIsMulti(isMulti: Boolean) {
+        this.isMulti = isMulti
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -216,6 +221,12 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                                 TAG,
                                 "バーコード検出: " + rawValue + " (形式: " + barcode.format + ")"
                             )
+                            if (!isMulti) {
+                                if (dismissListener != null) {
+                                    dismissListener!!.onDismiss()
+                                }
+                                dismiss()
+                            }
                         }
                     }
                 }

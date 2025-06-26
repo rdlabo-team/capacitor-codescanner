@@ -6,6 +6,7 @@ import com.google.android.gms.common.util.BiConsumer
 
 class CodeScanner {
     fun present(
+        isMulti: Boolean,
         activity: FragmentActivity,
         notifyListenersFunction: BiConsumer<String, JSObject>,
         listener: CodeScannerBottomSheetFragment.OnDismissListener?
@@ -14,6 +15,7 @@ class CodeScanner {
             CodeScannerBottomSheetFragment.Companion.newInstance()
         fragment.setNotifyListenersFunction(notifyListenersFunction)
         fragment.setOnDismissListener(listener)
+        fragment.setIsMulti(isMulti)
         fragment.show(activity.supportFragmentManager, "CodeScannerBottomSheet")
     }
 }

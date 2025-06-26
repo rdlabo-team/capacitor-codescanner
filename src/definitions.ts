@@ -33,5 +33,6 @@ export interface ScannerOption {
   detectionY?: number;
   detectionWidth?: number;
   detectionHeight?: number;
+  isMulti: boolean;
   metadataObjectTypes?: MetadataObjectTypes[];
 }
