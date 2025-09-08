@@ -59,6 +59,7 @@ class CodeScannerPlugin : Plugin() {
         // BottomSheetDialogFragmentを表示
         implementation.present(
             call.getBoolean("isMulti") ?: false,
+            call.getBoolean("enableAutoLight") ?: true,
             codeTypes,
             detectionX,
             detectionY,

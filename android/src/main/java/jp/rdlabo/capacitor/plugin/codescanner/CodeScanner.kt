@@ -8,6 +8,7 @@ import com.google.android.gms.common.util.BiConsumer
 class CodeScanner {
     fun present(
         isMulti: Boolean,
+        enableAutoLight: Boolean,
         codeTypes: JSArray,
         detectionX: Float,
         detectionY: Float,
@@ -21,7 +22,7 @@ class CodeScanner {
             CodeScannerBottomSheetFragment.Companion.newInstance()
         fragment.setNotifyListenersFunction(notifyListenersFunction)
         fragment.setOnDismissListener(listener)
-        fragment.setCallSettings(isMulti, codeTypes, detectionX,
+        fragment.setCallSettings(isMulti, enableAutoLight, codeTypes, detectionX,
             detectionY,
             detectionWidth,
             detectionHeight,)

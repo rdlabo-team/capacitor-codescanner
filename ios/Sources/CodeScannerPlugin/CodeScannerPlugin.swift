@@ -23,9 +23,11 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
 
     var isReady = false
     var isMulti = false
+    var enableAutoLight = true
 
     @objc func present(_ call: CAPPluginCall) {
         self.isMulti = call.getBool("isMulti", false)
+        self.enableAutoLight = call.getBool("enableAutoLight", true)
         DispatchQueue.main.async {
             if let rootViewController = UIApplication.shared.keyWindow?.rootViewController {
                 // 検出エリア設定
@@ -150,7 +152,9 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 DispatchQueue.global(qos: .userInitiated).async {
                     if !self.captureSession.isRunning {
                         self.captureSession.startRunning()
-                        self.toggleLight(launch: true)
+                        if self.enableAutoLight {
+                            self.toggleLight(launch: true)
+                        }
                     }
                 }
 
@@ -164,7 +168,9 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
     }
 
     public func closeCamera() {
-        self.toggleLight(launch: false)
+        if self.enableAutoLight {
+            self.toggleLight(launch: false)
+        }
         DispatchQueue.main.async {
             if let rootViewController = UIApplication.shared.keyWindow?.rootViewController {
                 if self.captureSession.isRunning {

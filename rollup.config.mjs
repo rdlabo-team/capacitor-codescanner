@@ -4,7 +4,7 @@ export default {
     {
       file: 'dist/plugin.js',
       format: 'iife',
-      name: 'capacitorExample',
+      name: 'capacitorCodeScanner',
       globals: {
         '@capacitor/core': 'capacitorExports',
       },

@@ -33,6 +33,19 @@ export interface ScannerOption {
   detectionY?: number;
   detectionWidth?: number;
   detectionHeight?: number;
-  isMulti: boolean;
+
+  /**
+   * Specify the types of codes to recognize (default: ["qr", "code39", "ean13"])
+   */
   metadataObjectTypes?: MetadataObjectTypes[];
+
+  /**
+   * Enable multi scan mode (default: false)
+   */
+  isMulti: boolean;
+
+  /**
+   * Enable auto light when environment is dark (default: true)
+   */
+  enableAutoLight?: boolean;
 }

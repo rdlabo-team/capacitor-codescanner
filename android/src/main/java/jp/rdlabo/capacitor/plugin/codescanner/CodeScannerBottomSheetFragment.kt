@@ -52,6 +52,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var barcodeScanner: BarcodeScanner? = null
     private var notifyListenersFunction: BiConsumer<String, JSObject>? = null
     private var isMulti = false
+    private var enableAutoLight = true
     private var codeTypes: JSArray = JSArray.from(arrayOf("qr", "code39", "ean13"))
     private var detectionX: Float = 0.2f
     private var detectionY: Float = 0.35f
@@ -80,6 +81,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
 
     fun setCallSettings(
         isMulti: Boolean,
+        enableAutoLight: Boolean,
         codeTypes: JSArray,
         detectionX: Float,
         detectionY: Float,
@@ -87,6 +89,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         detectionHeight: Float
     ) {
         this.isMulti = isMulti
+        this.enableAutoLight = enableAutoLight
         this.codeTypes = codeTypes
         this.detectionX = detectionX
         this.detectionY = detectionY
@@ -265,7 +268,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 // 検出範囲の枠線を設定
                 setupDetectionArea()
 
-                if (!this.isFlashOn()) {
+                if (enableAutoLight && !this.isFlashOn()) {
                     this.turnOnFlash()
                 }
             } catch (e: Exception) {
@@ -531,7 +534,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         if (dismissListener != null) {
             dismissListener!!.onDismiss()
         }
-        if (this.isFlashOn()) {
+        if (enableAutoLight && this.isFlashOn()) {
             this.turnOffFlash()
         }
     }
