@@ -22,11 +22,12 @@
     "@angular/platform-browser": "^20.0.4",
     "@angular/platform-browser-dynamic": "^20.0.4",
     "@angular/router": "^20.0.4",
-    "@rdlabo/capacitor-codescanner": "file:../..",
     "@capacitor/android": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/ios": "^7.0.0",
+    "@capawesome/capacitor-android-edge-to-edge-support": "^7.2.3",
     "@ionic/angular": "^8.4.1",
+    "@rdlabo/capacitor-codescanner": "file:../..",
     "rxjs": "~7.5.1",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

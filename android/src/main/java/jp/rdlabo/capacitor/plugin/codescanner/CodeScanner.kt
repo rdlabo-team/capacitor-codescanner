@@ -9,9 +9,8 @@ class CodeScanner {
     fun present(
         isMulti: Boolean,
         enableAutoLight: Boolean,
+        enableCloseButton: Boolean,
         codeTypes: JSArray,
-        detectionX: Float,
-        detectionY: Float,
         detectionWidth: Float,
         detectionHeight: Float,
         activity: FragmentActivity,
@@ -22,10 +21,9 @@ class CodeScanner {
             CodeScannerBottomSheetFragment.Companion.newInstance()
         fragment.setNotifyListenersFunction(notifyListenersFunction)
         fragment.setOnDismissListener(listener)
-        fragment.setCallSettings(isMulti, enableAutoLight, codeTypes, detectionX,
-            detectionY,
+        fragment.setCallSettings(isMulti, enableAutoLight, enableCloseButton, codeTypes,
             detectionWidth,
-            detectionHeight,)
+            detectionHeight)
         fragment.show(activity.supportFragmentManager, "CodeScannerBottomSheet")
     }
 }

@@ -29,10 +29,19 @@ export type MetadataObjectTypes =
   | 'salientObject';
 
 export interface ScannerOption {
-  detectionX?: number;
-  detectionY?: number;
   detectionWidth?: number;
   detectionHeight?: number;
+
+  /**
+   * Enable close button on the top left of the scanning area (default: true)
+   */
+  enableCloseButton?: boolean;
+
+  /**
+   * Specify the ratio of the scanning area (sheet modal size) to the screen size.
+   * Default is 0.9 for android, 1(pageSheet) for iOS.
+   */
+  sheetScreenRatio?: number;
 
   /**
    * Specify the types of codes to recognize (default: ["qr", "code39", "ean13"])

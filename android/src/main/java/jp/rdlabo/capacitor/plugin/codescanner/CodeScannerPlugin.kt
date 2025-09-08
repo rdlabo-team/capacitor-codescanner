@@ -51,18 +51,15 @@ class CodeScannerPlugin : Plugin() {
         }
 
         val codeTypes = call.getArray("CodeTypes", JSArray.from(arrayOf("qr", "code39", "ean13")))!!;
-        val detectionX: Float = call.getFloat("detectionX") ?: 0.2f
-        val detectionY: Float = call.getFloat("detectionY") ?: 0.35f
-        val detectionWidth: Float = call.getFloat("detectionWidth") ?: 0.6f
-        val detectionHeight: Float = call.getFloat("detectionHeight") ?: 0.15f
+        val detectionWidth: Float = call.getFloat("detectionWidth") ?: 0.4f
+        val detectionHeight: Float = call.getFloat("detectionHeight") ?: 1f
 
         // BottomSheetDialogFragmentを表示
         implementation.present(
             call.getBoolean("isMulti") ?: false,
             call.getBoolean("enableAutoLight") ?: true,
+            call.getBoolean("enableCloseButton") ?: true,
             codeTypes,
-            detectionX,
-            detectionY,
             detectionWidth,
             detectionHeight,
             activity,
