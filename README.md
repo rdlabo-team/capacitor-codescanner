@@ -108,14 +108,15 @@ addListener(eventName: 'CodeScannerCatchEvent', listenerFunc: (event: { code: st
 
 #### ScannerOption
 
-| Prop                      | Type                               |
-| ------------------------- | ---------------------------------- |
-| **`detectionX`**          | <code>number</code>                |
-| **`detectionY`**          | <code>number</code>                |
-| **`detectionWidth`**      | <code>number</code>                |
-| **`detectionHeight`**     | <code>number</code>                |
-| **`isMulti`**             | <code>boolean</code>               |
-| **`metadataObjectTypes`** | <code>MetadataObjectTypes[]</code> |
+| Prop                      | Type                               | Description                                                                                                                     |
+| ------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **`detectionWidth`**      | <code>number</code>                |                                                                                                                                 |
+| **`detectionHeight`**     | <code>number</code>                |                                                                                                                                 |
+| **`enableCloseButton`**   | <code>boolean</code>               | Enable close button on the top left of the scanning area (default: true)                                                        |
+| **`sheetScreenRatio`**    | <code>number</code>                | Specify the ratio of the scanning area (sheet modal size) to the screen size. Default is 0.9 for android, 1(pageSheet) for iOS. |
+| **`metadataObjectTypes`** | <code>MetadataObjectTypes[]</code> | Specify the types of codes to recognize (default: ["qr", "code39", "ean13"])                                                    |
+| **`isMulti`**             | <code>boolean</code>               | Enable multi scan mode (default: false)                                                                                         |
+| **`enableAutoLight`**     | <code>boolean</code>               | Enable auto light when environment is dark (default: true)                                                                      |
 
 
 #### PluginListenerHandle

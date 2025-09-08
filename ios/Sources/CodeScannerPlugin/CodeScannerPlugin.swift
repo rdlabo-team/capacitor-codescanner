@@ -2,6 +2,16 @@ import Foundation
 import Capacitor
 import AVFoundation
 
+class CodeScannerViewController: UIViewController {
+    weak var scannerPlugin: CodeScannerPlugin?
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // ビューが非表示になった時にcloseCameraを呼び出し
+        scannerPlugin?.closeCamera()
+    }
+}
+
 /**
  * Please read the Capacitor iOS Plugin Development Guide
  * here: https://capacitorjs.com/docs/plugins/ios
@@ -24,17 +34,22 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
     var isReady = false
     var isMulti = false
     var enableAutoLight = true
+    var currentCall: CAPPluginCall?
+    var isClosing = false
 
     @objc func present(_ call: CAPPluginCall) {
+        self.currentCall = call
         self.isMulti = call.getBool("isMulti", false)
         self.enableAutoLight = call.getBool("enableAutoLight", true)
+        let enableCloseButton = call.getBool("enableCloseButton", true)
         DispatchQueue.main.async {
             if let rootViewController = UIApplication.shared.keyWindow?.rootViewController {
                 // 検出エリア設定
-                let x: CGFloat = CGFloat(call.getFloat("detectionX") ?? 0.2)
-                let y: CGFloat = CGFloat(call.getFloat("detectionY") ?? 0.35)
-                let width: CGFloat = CGFloat(call.getFloat("detectionWidth") ?? 0.6)
-                let height: CGFloat = CGFloat(call.getFloat("detectionHeight") ?? 0.15)
+                let width: CGFloat = CGFloat(call.getFloat("detectionWidth") ?? 0.4)
+                let height: CGFloat = CGFloat(call.getFloat("detectionHeight") ?? 1)
+                
+                // シートの高さ比率設定
+                let sheetScreenRatio: CGFloat = CGFloat(call.getFloat("sheetScreenRatio") ?? 1.0)
 
                 // 入力（背面カメラ）
                 if !self.isReady {
@@ -103,13 +118,49 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                     }
 
                     metadataOutput.metadataObjectTypes = metadataObjectTypes
-                    metadataOutput.rectOfInterest = CGRect(x: y, y: 1-x-width, width: height, height: width)
+                    // 中央配置に基づいてrectOfInterestを計算（heightは幅に対する割合）
+                    let centerX = 0.5 - width / 2
+                    let aspectRatio = height // 幅に対する高さの割合
+                    let centerY = 0.5 - (width * aspectRatio) / 2
+                    metadataOutput.rectOfInterest = CGRect(x: centerY, y: centerX, width: width * aspectRatio, height: width)
                     self.isReady = true
                 }
 
                 // プレビュー表示
-                self.previewViewCtrl = UIViewController()
+                let scannerViewController = CodeScannerViewController()
+                scannerViewController.scannerPlugin = self
+                self.previewViewCtrl = scannerViewController
                 self.previewViewCtrl.modalPresentationStyle = .pageSheet
+                
+                // シートの背景を暗くする
+                if #available(iOS 15.0, *) {
+                    self.previewViewCtrl.sheetPresentationController?.prefersScrollingExpandsWhenScrolledToEdge = false
+                    self.previewViewCtrl.sheetPresentationController?.prefersEdgeAttachedInCompactHeight = true
+                }
+                
+                // シートの高さ比率を設定
+                if #available(iOS 15.0, *) {
+                    let screenHeight = UIScreen.main.bounds.height
+                    let sheetHeight = screenHeight * sheetScreenRatio
+                    if #available(iOS 16.0, *) {
+                        self.previewViewCtrl.sheetPresentationController?.detents = [
+                            UISheetPresentationController.Detent.custom { _ in
+                                return sheetHeight
+                            }
+                        ]
+                    } else {
+                        // Fallback on earlier versions
+                        if sheetScreenRatio <= 0.5 {
+                            self.previewViewCtrl.sheetPresentationController?.detents = [.medium()]
+                        } else if sheetScreenRatio <= 0.7 {
+                            self.previewViewCtrl.sheetPresentationController?.detents = [.large()]
+                        } else {
+                            self.previewViewCtrl.sheetPresentationController?.detents = [.large()]
+                        }
+                    }
+                    // ハンドルを表示
+                    self.previewViewCtrl.sheetPresentationController?.prefersGrabberVisible = true
+                }
 
                 self.previewViewCtrl.view.backgroundColor = .black
                 self.previewViewCtrl.view.frame = rootViewController.view.bounds
@@ -122,10 +173,36 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 self.previewViewCtrl.view.layer.addSublayer(self.videoLayer!)
 
                 self.detectionArea = UIView()
-                self.detectionArea.frame = CGRect(x: rootViewController.view.frame.size.width * x, y: rootViewController.view.frame.size.height * y, width: rootViewController.view.frame.size.width * width, height: rootViewController.view.frame.size.height * height)
-                self.detectionArea.layer.borderColor = UIColor.red.cgColor
-                self.detectionArea.layer.borderWidth = 3
+                // SafeAreaとハンドル部分を考慮した有効エリアで検出エリアを中央配置で計算
+                let safeAreaInsets = rootViewController.view.safeAreaInsets
+                let handleHeight: CGFloat = 20 // ハンドル部分の高さ
+                let availableWidth = rootViewController.view.frame.size.width - safeAreaInsets.left - safeAreaInsets.right
+                let availableHeight = (UIScreen.main.bounds.height * sheetScreenRatio) - safeAreaInsets.top - safeAreaInsets.bottom - handleHeight
+                
+                let detectionWidth = availableWidth * width
+                let detectionHeight = detectionWidth * height // 幅に対する割合に変更
+                let x = safeAreaInsets.left + (availableWidth - detectionWidth) / 2
+                let y = safeAreaInsets.top + handleHeight + (availableHeight - detectionHeight) / 2
+                self.detectionArea.frame = CGRect(x: x, y: y, width: detectionWidth, height: detectionHeight)
+                self.detectionArea.layer.cornerRadius = 8
                 self.previewViewCtrl.view.addSubview(self.detectionArea)
+                
+                // 検出エリア以外を暗くするオーバーレイを作成
+                let overlayView = UIView(frame: self.previewViewCtrl.view.bounds)
+                overlayView.backgroundColor = UIColor.black.withAlphaComponent(0.2)
+                overlayView.tag = 888 // 識別用のタグ
+                
+                // 検出エリア部分を透明にするマスクを作成（SafeAreaを考慮）
+                let maskLayer = CAShapeLayer()
+                let path = UIBezierPath(rect: overlayView.bounds)
+                let detectionRect = CGRect(x: x, y: y, width: detectionWidth, height: detectionHeight)
+                let transparentPath = UIBezierPath(roundedRect: detectionRect, cornerRadius: 8)
+                path.append(transparentPath.reversing())
+                maskLayer.path = path.cgPath
+                maskLayer.fillRule = .evenOdd
+                overlayView.layer.mask = maskLayer
+                
+                self.previewViewCtrl.view.addSubview(overlayView)
 
                 // 検出ビュー
                 self.codeView = UIView()
@@ -135,19 +212,24 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
 
                 self.previewViewCtrl.view.addSubview(self.codeView)
 
-                // 閉じるボタン
-                let btnClose = UIButton()
-                btnClose.titleLabel?.textAlignment = .center
-                btnClose.setTitle("✕", for: .normal)
-                btnClose.setTitleColor(.white, for: .normal)
-                btnClose.frame = CGRect(x: 20, y: 30, width: 30, height: 30)
-                btnClose.layer.cornerRadius = btnClose.bounds.midY
-                btnClose.backgroundColor = .black
+                // 閉じるボタン（enableCloseButtonがtrueの場合のみ表示）
+                if enableCloseButton {
+                    let btnClose = UIButton()
+                    if #available(iOS 13.0, *) {
+                        let closeImage = UIImage(systemName: "xmark")
+                        btnClose.setImage(closeImage, for: .normal)
+                        btnClose.tintColor = .white
+                    } else {
+                        btnClose.setTitle("✕", for: .normal)
+                        btnClose.setTitleColor(.white, for: .normal)
+                    }
+                    btnClose.frame = CGRect(x: 20, y: 30, width: 44, height: 44)
 
-                self.previewViewCtrl.view.addSubview(btnClose)
+                    self.previewViewCtrl.view.addSubview(btnClose)
 
-                let closeGesture = UITapGestureRecognizer(target: self, action: #selector(self.closeGesture))
-                btnClose.addGestureRecognizer(closeGesture)
+                    let closeGesture = UITapGestureRecognizer(target: self, action: #selector(self.closeGesture))
+                    btnClose.addGestureRecognizer(closeGesture)
+                }
 
                 DispatchQueue.global(qos: .userInitiated).async {
                     if !self.captureSession.isRunning {
@@ -157,8 +239,6 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                         }
                     }
                 }
-
-                call.resolve()
             }
         }
     }
@@ -168,6 +248,11 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
     }
 
     public func closeCamera() {
+        print("closeCamera")
+        // 重複実行を防ぐ
+        guard !self.isClosing else { return }
+        self.isClosing = true
+        
         if self.enableAutoLight {
             self.toggleLight(launch: false)
         }
@@ -176,7 +261,20 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 if self.captureSession.isRunning {
                     self.captureSession.stopRunning()
                 }
-                rootViewController.dismiss(animated: true, completion: nil)
+                // オーバーレイを削除
+                if let overlayView = self.previewViewCtrl?.view.viewWithTag(888) {
+                    overlayView.removeFromSuperview()
+                }
+                rootViewController.dismiss(animated: true, completion: {
+                    // シートが閉じられた後にresolveを実行
+                    if let call = self.currentCall {
+                        call.resolve()
+                        self.currentCall = nil
+                    }
+                    self.isClosing = false
+                })
+            } else {
+                self.isClosing = false
             }
         }
     }

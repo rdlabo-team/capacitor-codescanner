@@ -17,7 +17,7 @@ import { CodeScanner } from '@rdlabo/capacitor-codescanner';
   selector: 'app-tab1',
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss'],
-  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonText, IonButton, IonLabel],
+  imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonButton, IonLabel],
 })
 export class Tab1Page implements OnInit {
   codes = signal<string[]>([]);
@@ -29,6 +29,11 @@ export class Tab1Page implements OnInit {
   }
 
   async present(): Promise<void> {
-    await CodeScanner.present({});
+    await CodeScanner.present({
+      isMulti: false,
+      enableAutoLight: false,
+      enableCloseButton: false,
+      sheetScreenRatio: 0.3,
+    });
   }
 }
