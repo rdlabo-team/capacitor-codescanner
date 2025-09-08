@@ -11,12 +11,18 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Detection area overlay -->
+    <!-- Detection area overlay (transparent) -->
     <View
         android:id="@+id/detection_area"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@drawable/detection_area_border" />
+        android:background="@drawable/detection_area_rounded" />
+
+    <!-- Dark overlay with transparent detection area -->
+    <jp.rdlabo.capacitor.plugin.codescanner.DarkOverlayView
+        android:id="@+id/dark_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <!-- Detected code overlay -->
     <View
@@ -38,8 +44,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingTop="12dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="24dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:paddingBottom="16dp">
 
             <!-- Drag handle -->
@@ -54,14 +60,17 @@
             <!-- Close button -->
             <ImageButton
                 android:id="@+id/close_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:layout_gravity="start"
-                android:background="@drawable/circle_background"
+                android:layout_marginTop="-8dp"
+                android:layout_marginStart="-8dp"
+                android:background="@android:color/transparent"
                 android:src="@android:drawable/ic_menu_close_clear_cancel"
                 android:contentDescription="閉じる"
                 android:scaleType="centerInside"
-                android:padding="8dp" />
+                android:padding="0dp"
+                android:tint="@android:color/white" />
 
         </LinearLayout>
 

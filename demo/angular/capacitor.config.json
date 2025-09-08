@@ -2,5 +2,8 @@
   "appId": "io.ionic.starter",
   "appName": "capacitor-code-scanner",
   "npmClient": "npm",
-  "webDir": "www/browser"
+  "webDir": "www/browser",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "disable"
+  }
 }

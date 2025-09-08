@@ -53,15 +53,16 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var notifyListenersFunction: BiConsumer<String, JSObject>? = null
     private var isMulti = false
     private var enableAutoLight = true
+    private var enableCloseButton = true
     private var codeTypes: JSArray = JSArray.from(arrayOf("qr", "code39", "ean13"))
-    private var detectionX: Float = 0.2f
-    private var detectionY: Float = 0.35f
-    private var detectionWidth: Float = 0.6f
-    private var detectionHeight: Float = 0.15f
+    private var detectionWidth: Float = 0.4f
+    private var detectionHeight: Float = 1f
     
     // UI elements for detection area and code view
     private var detectionAreaView: View? = null
     private var codeView: View? = null
+    private var darkOverlayView: DarkOverlayView? = null
+    private var cameraPreviewContainer: FrameLayout? = null
     
     // 画像サイズを保存
     private var imageWidth: Int = 0
@@ -82,17 +83,15 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     fun setCallSettings(
         isMulti: Boolean,
         enableAutoLight: Boolean,
+        enableCloseButton: Boolean,
         codeTypes: JSArray,
-        detectionX: Float,
-        detectionY: Float,
         detectionWidth: Float,
         detectionHeight: Float
     ) {
         this.isMulti = isMulti
         this.enableAutoLight = enableAutoLight
+        this.enableCloseButton = enableCloseButton
         this.codeTypes = codeTypes
-        this.detectionX = detectionX
-        this.detectionY = detectionY
         this.detectionWidth = detectionWidth
         this.detectionHeight = detectionHeight
     }
@@ -155,16 +154,23 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         val view = inflater.inflate(R.layout.fragment_code_scanner_bottom_sheet, container, false)
 
         val closeButton = view.findViewById<ImageButton>(R.id.close_button)
-        closeButton.setOnClickListener { v: View? ->
-            if (dismissListener != null) {
-                dismissListener!!.onDismiss()
+        if (enableCloseButton) {
+            closeButton.visibility = View.VISIBLE
+            closeButton.setOnClickListener { v: View? ->
+                if (dismissListener != null) {
+                    dismissListener!!.onDismiss()
+                }
+                dismiss()
             }
-            dismiss()
+        } else {
+            closeButton.visibility = View.GONE
         }
 
         // 検出範囲とコードビューの参照を取得
         detectionAreaView = view.findViewById(R.id.detection_area)
         codeView = view.findViewById(R.id.code_view)
+        darkOverlayView = view.findViewById(R.id.dark_overlay)
+        cameraPreviewContainer = view.findViewById(R.id.camera_preview)
 
         return view
     }
@@ -176,15 +182,38 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         val bottomSheet = dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         bottomSheet?.let { sheet ->
             val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
-            behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            
+            // 段階的な高さ設定を無効化し、デフォルトの高さを使用
             behavior.isDraggable = true
             behavior.isHideable = true
-            behavior.skipCollapsed = false
+            behavior.skipCollapsed = true // 段階的な高さ変更を無効化
+            behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             
-            // 高さを90%に設定
-            val layoutParams = sheet.layoutParams
-            layoutParams.height = (resources.displayMetrics.heightPixels * 0.9).toInt()
-            sheet.layoutParams = layoutParams
+            // ドラッグ時の動作を制御
+            behavior.addBottomSheetCallback(object : com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback() {
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    when (newState) {
+                        com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_DRAGGING -> {
+                            // ドラッグ中は何もしない
+                        }
+                        com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_SETTLING -> {
+                            // 設定中は何もしない
+                        }
+                        com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HIDDEN -> {
+                            // 完全に隠れた場合は閉じる
+                            dismiss()
+                        }
+                        com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED -> {
+                            // 折りたたまれた場合は元の高さに戻す
+                            behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                        }
+                    }
+                }
+                
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {
+                    // スライド中は何もしない
+                }
+            })
         }
     }
 
@@ -232,7 +261,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         val options = createBarcodeScannerOptions()
         barcodeScanner = BarcodeScanning.getClient(options)
 
-        val cameraPreviewContainer = view!!.findViewById<FrameLayout>(R.id.camera_preview) ?: return
+        val cameraPreviewContainer = requireView().findViewById<FrameLayout>(R.id.camera_preview) ?: return
 
         previewView = PreviewView(requireContext())
         cameraPreviewContainer.removeAllViews()
@@ -286,20 +315,22 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
             view.post {
                 val parent = view.parent as? ViewGroup ?: return@post
                 
-                // プレビュービューの実際のサイズを使用
-                val previewView = previewView ?: return@post
-                val previewWidth = previewView.width
-                val previewHeight = previewView.height
+                // カメラプレビューコンテナの実際のサイズを使用
+                val container = cameraPreviewContainer ?: return@post
+                val previewWidth = container.width
+                val previewHeight = container.height
                 
                 if (previewWidth == 0 || previewHeight == 0) {
                     Log.w(TAG, "プレビュービューのサイズが0です")
                     return@post
                 }
                 
-                val x = (previewWidth * detectionX).toInt()
-                val y = (previewHeight * detectionY).toInt()
+                // 検出範囲の計算は、シートの高さではなく実際のプレビューサイズを基準にする
+                // これにより、sheetScreenRatioの二重計算を回避
                 val width = (previewWidth * detectionWidth).toInt()
-                val height = (previewHeight * detectionHeight).toInt()
+                val height = (width * detectionHeight).toInt() // 幅に対する割合に変更
+                val x = (previewWidth - width) / 2 // 中央配置
+                val y = (previewHeight - height) / 2 // 中央配置
                 
                 val params = view.layoutParams as RelativeLayout.LayoutParams
                 params.leftMargin = x
@@ -309,7 +340,11 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 view.layoutParams = params
                 view.requestLayout()
                 
+                // オーバーレイの検出エリアを更新
+                darkOverlayView?.setDetectionArea(x, y, x + width, y + height)
+                
                 Log.d(TAG, "検出範囲枠線設定: x=$x, y=$y, width=$width, height=$height")
+                Log.d(TAG, "プレビューサイズ: width=$previewWidth, height=$previewHeight")
             }
         }
     }
@@ -387,61 +422,26 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         // バーコードの境界ボックスを取得
         val boundingBox = barcode.boundingBox ?: return false
         
-        // プレビュービューのサイズを取得
-        val previewView = previewView ?: return false
+        // カメラプレビューコンテナのサイズを取得
+        val container = cameraPreviewContainer ?: return false
         
-        // プレビュービューの実際の表示サイズを取得
-        val previewWidth = previewView.width
-        val previewHeight = previewView.height
+        // カメラプレビューコンテナの実際の表示サイズを取得
+        val previewWidth = container.width
+        val previewHeight = container.height
         
         if (previewWidth == 0 || previewHeight == 0) {
             Log.w(TAG, "プレビュービューのサイズが0です")
             return false
         }
         
-        // 検出範囲の境界を計算（プレビュービュー内での相対座標）
-        val detectionLeft: Int
-        val detectionTop: Int
-        val detectionRight: Int
-        val detectionBottom: Int
-        
-        when (rotation) {
-            0 -> {
-                // 0度回転（通常の横向き）
-                detectionLeft = (previewWidth * detectionX).toInt()
-                detectionTop = (previewHeight * detectionY).toInt()
-                detectionRight = detectionLeft + (previewWidth * detectionWidth).toInt()
-                detectionBottom = detectionTop + (previewHeight * detectionHeight).toInt()
-            }
-            90 -> {
-                // 90度回転（縦向き）
-                detectionLeft = (previewWidth * detectionY).toInt()
-                detectionTop = (previewHeight * (1 - detectionX - detectionWidth)).toInt()
-                detectionRight = detectionLeft + (previewWidth * detectionHeight).toInt()
-                detectionBottom = detectionTop + (previewHeight * detectionWidth).toInt()
-            }
-            180 -> {
-                // 180度回転
-                detectionLeft = (previewWidth * (1 - detectionX - detectionWidth)).toInt()
-                detectionTop = (previewHeight * (1 - detectionY - detectionHeight)).toInt()
-                detectionRight = detectionLeft + (previewWidth * detectionWidth).toInt()
-                detectionBottom = detectionTop + (previewHeight * detectionHeight).toInt()
-            }
-            270 -> {
-                // 270度回転
-                detectionLeft = (previewWidth * (1 - detectionY - detectionHeight)).toInt()
-                detectionTop = (previewHeight * (1 - detectionX - detectionWidth)).toInt()
-                detectionRight = detectionLeft + (previewWidth * detectionHeight).toInt()
-                detectionBottom = detectionTop + (previewHeight * detectionWidth).toInt()
-            }
-            else -> {
-                // その他の回転角度
-                detectionLeft = (previewWidth * detectionX).toInt()
-                detectionTop = (previewHeight * detectionY).toInt()
-                detectionRight = detectionLeft + (previewWidth * detectionWidth).toInt()
-                detectionBottom = detectionTop + (previewHeight * detectionHeight).toInt()
-            }
-        }
+        // 検出範囲の境界を計算（中央配置）
+        // setupDetectionArea()と同じ計算ロジックを使用して一貫性を保つ
+        val detectionWidthPx = (previewWidth * detectionWidth).toInt()
+        val detectionHeightPx = (detectionWidthPx * detectionHeight).toInt() // 幅に対する割合
+        val detectionLeft = (previewWidth - detectionWidthPx) / 2
+        val detectionTop = (previewHeight - detectionHeightPx) / 2
+        val detectionRight = detectionLeft + detectionWidthPx
+        val detectionBottom = detectionTop + detectionHeightPx
         
         // MLKitの座標系からプレビュービューの座標系に変換
         if (imageWidth == 0 || imageHeight == 0) {
@@ -510,22 +510,8 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun showCodeDetectionFrame(barcode: Barcode) {
-        val boundingBox = barcode.boundingBox ?: return
-        
-        codeView?.let { view ->
-            val params = view.layoutParams as RelativeLayout.LayoutParams
-            params.leftMargin = boundingBox.left
-            params.topMargin = boundingBox.top
-            params.width = boundingBox.width()
-            params.height = boundingBox.height()
-            view.layoutParams = params
-            view.visibility = View.VISIBLE
-            
-            // 3秒後に枠線を非表示にする
-            view.postDelayed({
-                view.visibility = View.GONE
-            }, 3000)
-        }
+        // コード検出時の枠線は非表示にする
+        codeView?.visibility = View.GONE
     }
 
     override fun onDismiss(dialog: DialogInterface) {
