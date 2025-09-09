@@ -36,6 +36,45 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
     var enableAutoLight = true
     var currentCall: CAPPluginCall?
     var isClosing = false
+    
+    // 検出エリアの計算結果を保持する構造体
+    struct DetectionAreaInfo {
+        let frame: CGRect
+        let normalizedRect: CGRect
+    }
+    
+    // 検出エリアの位置とサイズを計算する共通メソッド
+    private func calculateDetectionArea(
+        width: CGFloat,
+        height: CGFloat,
+        sheetScreenRatio: CGFloat,
+        rootViewController: UIViewController
+    ) -> DetectionAreaInfo {
+        let safeAreaInsets = rootViewController.view.safeAreaInsets
+        let handleHeight: CGFloat = 20 // ハンドル部分の高さ
+        let availableWidth = rootViewController.view.frame.size.width - safeAreaInsets.left - safeAreaInsets.right
+        let availableHeight = (UIScreen.main.bounds.height * sheetScreenRatio) - safeAreaInsets.top - safeAreaInsets.bottom - handleHeight
+        
+        let detectionWidth = availableWidth * width
+        let detectionHeight = detectionWidth * height
+        let x = safeAreaInsets.left + (availableWidth - detectionWidth) / 2
+        let y = safeAreaInsets.top + handleHeight + (availableHeight - detectionHeight) / 2
+        
+        let frame = CGRect(x: x, y: y, width: detectionWidth, height: detectionHeight)
+        
+        // 画面座標系を0-1の正規化座標系に変換
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        
+        let normalizedX = x / screenWidth
+        let normalizedY = y / screenHeight
+        let normalizedWidth = detectionWidth / screenWidth
+        let normalizedHeight = detectionHeight / screenHeight
+        
+        let normalizedRect = CGRect(x: normalizedY, y: normalizedX, width: normalizedHeight, height: normalizedWidth)
+        
+        return DetectionAreaInfo(frame: frame, normalizedRect: normalizedRect)
+    }
 
     @objc func present(_ call: CAPPluginCall) {
         self.currentCall = call
@@ -118,11 +157,7 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                     }
 
                     metadataOutput.metadataObjectTypes = metadataObjectTypes
-                    // 中央配置に基づいてrectOfInterestを計算（heightは幅に対する割合）
-                    let centerX = 0.5 - width / 2
-                    let aspectRatio = height // 幅に対する高さの割合
-                    let centerY = 0.5 - (width * aspectRatio) / 2
-                    metadataOutput.rectOfInterest = CGRect(x: centerY, y: centerX, width: width * aspectRatio, height: width)
+                    // rectOfInterestは後でシート表示後に計算する
                     self.isReady = true
                 }
 
@@ -173,17 +208,14 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 self.previewViewCtrl.view.layer.addSublayer(self.videoLayer!)
 
                 self.detectionArea = UIView()
-                // SafeAreaとハンドル部分を考慮した有効エリアで検出エリアを中央配置で計算
-                let safeAreaInsets = rootViewController.view.safeAreaInsets
-                let handleHeight: CGFloat = 20 // ハンドル部分の高さ
-                let availableWidth = rootViewController.view.frame.size.width - safeAreaInsets.left - safeAreaInsets.right
-                let availableHeight = (UIScreen.main.bounds.height * sheetScreenRatio) - safeAreaInsets.top - safeAreaInsets.bottom - handleHeight
-                
-                let detectionWidth = availableWidth * width
-                let detectionHeight = detectionWidth * height // 幅に対する割合に変更
-                let x = safeAreaInsets.left + (availableWidth - detectionWidth) / 2
-                let y = safeAreaInsets.top + handleHeight + (availableHeight - detectionHeight) / 2
-                self.detectionArea.frame = CGRect(x: x, y: y, width: detectionWidth, height: detectionHeight)
+                // 共通メソッドを使用して検出エリアの位置とサイズを計算
+                let detectionAreaInfo = self.calculateDetectionArea(
+                    width: width,
+                    height: height,
+                    sheetScreenRatio: sheetScreenRatio,
+                    rootViewController: rootViewController
+                )
+                self.detectionArea.frame = detectionAreaInfo.frame
                 self.detectionArea.layer.cornerRadius = 8
                 self.previewViewCtrl.view.addSubview(self.detectionArea)
                 
@@ -195,8 +227,7 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 // 検出エリア部分を透明にするマスクを作成（SafeAreaを考慮）
                 let maskLayer = CAShapeLayer()
                 let path = UIBezierPath(rect: overlayView.bounds)
-                let detectionRect = CGRect(x: x, y: y, width: detectionWidth, height: detectionHeight)
-                let transparentPath = UIBezierPath(roundedRect: detectionRect, cornerRadius: 8)
+                let transparentPath = UIBezierPath(roundedRect: detectionAreaInfo.frame, cornerRadius: 8)
                 path.append(transparentPath.reversing())
                 maskLayer.path = path.cgPath
                 maskLayer.fillRule = .evenOdd
@@ -211,6 +242,11 @@ public class CodeScannerPlugin: CAPPlugin, AVCaptureMetadataOutputObjectsDelegat
                 self.codeView.frame = CGRect(x: 0, y: 0, width: 0, height: 0)
 
                 self.previewViewCtrl.view.addSubview(self.codeView)
+
+                // 共通メソッドの結果を使用してrectOfInterestを設定
+                if let metadataOutput = self.captureSession.outputs.first as? AVCaptureMetadataOutput {
+                    metadataOutput.rectOfInterest = detectionAreaInfo.normalizedRect
+                }
 
                 // 閉じるボタン（enableCloseButtonがtrueの場合のみ表示）
                 if enableCloseButton {
