@@ -1,4 +1,4 @@
-package com.getcapacitor.community.stripe.identity.models
+package jp.rdlabo.capacitor.plugin.codescanner.models
 
 import android.app.Activity
 import android.content.Context
