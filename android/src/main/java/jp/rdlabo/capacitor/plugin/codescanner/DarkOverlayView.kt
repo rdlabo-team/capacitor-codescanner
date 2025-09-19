@@ -1,6 +1,7 @@
 package jp.rdlabo.capacitor.plugin.codescanner
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
@@ -23,6 +24,7 @@ class DarkOverlayView @JvmOverloads constructor(
 
     private var detectionRect: RectF? = null
     private var cornerRadius = 16f
+    private var onConfigurationChangedListener: (() -> Unit)? = null
 
     fun setDetectionArea(left: Int, top: Int, right: Int, bottom: Int) {
         // Safe-areaを考慮せず、そのままの座標を使用
@@ -33,6 +35,26 @@ class DarkOverlayView @JvmOverloads constructor(
             bottom.toFloat()
         )
         invalidate()
+    }
+
+    fun setOnConfigurationChangedListener(listener: () -> Unit) {
+        onConfigurationChangedListener = listener
+    }
+
+    fun clearOnConfigurationChangedListener() {
+        onConfigurationChangedListener = null
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        // ビューがウィンドウから切り離されたときにリスナーをクリア
+        clearOnConfigurationChangedListener()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration?) {
+        super.onConfigurationChanged(newConfig)
+        // 画面回転時にコールバックを実行
+        onConfigurationChangedListener?.invoke()
     }
 
     override fun onDraw(canvas: Canvas) {

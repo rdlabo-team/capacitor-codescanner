@@ -40,6 +40,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import android.widget.RelativeLayout
+import android.content.res.Configuration
 
 class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     private var dismissListener: OnDismissListener? = null
@@ -172,6 +173,14 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         darkOverlayView = view.findViewById(R.id.dark_overlay)
         cameraPreviewContainer = view.findViewById(R.id.camera_preview)
 
+        // 画面回転時のコールバックを設定
+        darkOverlayView?.setOnConfigurationChangedListener {
+            // 少し遅延させてレイアウトが完了してから実行
+            view.post {
+                setupDetectionArea()
+            }
+        }
+
         return view
     }
 
@@ -235,6 +244,8 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         super.onDestroyView()
         // ビューが破棄されたらカメラを停止
         stopCamera()
+        // 画面回転監視のクリーンアップ
+        darkOverlayView?.clearOnConfigurationChangedListener()
     }
 
     override fun onDestroy() {
@@ -245,6 +256,17 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
         }
         if (cameraExecutor != null) {
             cameraExecutor!!.shutdown()
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 画面回転時に検出エリアを再計算
+        Log.d(TAG, "画面回転検出: orientation=${newConfig.orientation}")
+        
+        // レイアウトの更新を待ってから検出エリアを再設定
+        view?.post {
+            setupDetectionArea()
         }
     }
 
@@ -321,7 +343,11 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 val previewHeight = container.height
                 
                 if (previewWidth == 0 || previewHeight == 0) {
-                    Log.w(TAG, "プレビュービューのサイズが0です")
+                    Log.w(TAG, "プレビュービューのサイズが0です - 再試行します")
+                    // サイズが0の場合は少し待ってから再試行
+                    view.postDelayed({
+                        setupDetectionArea()
+                    }, 100)
                     return@post
                 }
                 
@@ -343,8 +369,8 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 // オーバーレイの検出エリアを更新
                 darkOverlayView?.setDetectionArea(x, y, x + width, y + height)
                 
-                Log.d(TAG, "検出範囲枠線設定: x=$x, y=$y, width=$width, height=$height")
-                Log.d(TAG, "プレビューサイズ: width=$previewWidth, height=$previewHeight")
+                Log.d(TAG, "検出範囲枠線設定 (回転対応): x=$x, y=$y, width=$width, height=$height")
+                Log.d(TAG, "プレビューサイズ (回転対応): width=$previewWidth, height=$previewHeight")
             }
         }
     }
@@ -517,6 +543,8 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         stopCamera()
+        // 画面回転監視のクリーンアップ
+        darkOverlayView?.clearOnConfigurationChangedListener()
         if (dismissListener != null) {
             dismissListener!!.onDismiss()
         }
