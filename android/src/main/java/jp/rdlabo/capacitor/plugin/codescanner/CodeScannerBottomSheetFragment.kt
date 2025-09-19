@@ -331,6 +331,7 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun setupDetectionArea() {
+        Log.d(TAG, "setupDetectionArea() 開始")
         // 検出範囲の枠線を表示
         detectionAreaView?.let { view ->
             // ビューのサイズが確定するまで待つ
@@ -369,8 +370,10 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
                 // オーバーレイの検出エリアを更新
                 darkOverlayView?.setDetectionArea(x, y, x + width, y + height)
                 
-                Log.d(TAG, "検出範囲枠線設定 (回転対応): x=$x, y=$y, width=$width, height=$height")
-                Log.d(TAG, "プレビューサイズ (回転対応): width=$previewWidth, height=$previewHeight")
+                Log.d(TAG, "【視覚的エリア設定】")
+                Log.d(TAG, "  コンテナサイズ: ${previewWidth}x${previewHeight}")
+                Log.d(TAG, "  検出エリア位置: x=$x, y=$y, width=$width, height=$height")
+                Log.d(TAG, "  検出エリア範囲: left=$x, top=$y, right=${x + width}, bottom=${y + height}")
             }
         }
     }
@@ -387,14 +390,15 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
     @OptIn(ExperimentalGetImage::class)
     private inner class BarcodeAnalyzer : ImageAnalysis.Analyzer {
         override fun analyze(imageProxy: ImageProxy) {
+            // 回転情報を渡さずに生の画像で検出
             val image = InputImage.fromMediaImage(
                 imageProxy.image!!,
-                imageProxy.imageInfo.rotationDegrees
+                0  // 回転情報を渡さない
             )
             
-            // 画像サイズと回転を保存
-            imageWidth = image.width
-            imageHeight = image.height
+            // 元の画像サイズと回転を保存
+            imageWidth = imageProxy.width
+            imageHeight = imageProxy.height
             val rotation = imageProxy.imageInfo.rotationDegrees
 
             barcodeScanner!!.process(image)
@@ -487,14 +491,16 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
             }
             90 -> {
                 // 90度回転（縦向き）
+                // 生の画像座標系から90度回転後の画面座標系への変換
+                // 右下→右下になるように修正
                 barcodeCenterX = ((imageHeight - boundingBox.centerY()) * previewWidth / imageHeight).toInt()
-                barcodeCenterY = ((imageWidth - boundingBox.centerX()) * previewHeight / imageWidth).toInt()
+                barcodeCenterY = (boundingBox.centerX() * previewHeight / imageWidth).toInt()
                 Log.d(TAG, "90度回転座標変換詳細:")
                 Log.d(TAG, "  boundingBox.centerX()=${boundingBox.centerX()}, boundingBox.centerY()=${boundingBox.centerY()}")
                 Log.d(TAG, "  imageWidth=$imageWidth, imageHeight=$imageHeight")
                 Log.d(TAG, "  previewWidth=$previewWidth, previewHeight=$previewHeight")
                 Log.d(TAG, "  X計算: (${imageHeight} - ${boundingBox.centerY()}) * ${previewWidth} / ${imageHeight} = ${(imageHeight - boundingBox.centerY()) * previewWidth / imageHeight}")
-                Log.d(TAG, "  Y計算: (${imageWidth} - ${boundingBox.centerX()}) * ${previewHeight} / ${imageWidth} = ${(imageWidth - boundingBox.centerX()) * previewHeight / imageWidth}")
+                Log.d(TAG, "  Y計算: ${boundingBox.centerX()} * ${previewHeight} / ${imageWidth} = ${boundingBox.centerX() * previewHeight / imageWidth}")
             }
             180 -> {
                 // 180度回転
@@ -513,24 +519,69 @@ class CodeScannerBottomSheetFragment : BottomSheetDialogFragment() {
             }
         }
         
+        // 視覚的エリアの現在の状態も確認
+        setupDetectionArea()
+        
         // デバッグ情報を出力
-        Log.d(TAG, "プレビューサイズ: width=$previewWidth, height=$previewHeight")
-        Log.d(TAG, "画像サイズ: width=$imageWidth, height=$imageHeight")
-        Log.d(TAG, "回転角度: $rotation")
-        Log.d(TAG, "検出範囲: left=$detectionLeft, top=$detectionTop, right=$detectionRight, bottom=$detectionBottom")
+        Log.d(TAG, "【判定ロジック】")
+        Log.d(TAG, "  プレビューサイズ: width=$previewWidth, height=$previewHeight")
+        Log.d(TAG, "  画像サイズ: width=$imageWidth, height=$imageHeight")
+        Log.d(TAG, "  回転角度: $rotation")
+        Log.d(TAG, "  検出範囲: left=$detectionLeft, top=$detectionTop, right=$detectionRight, bottom=$detectionBottom")
         Log.d(TAG, "バーコード中心(変換前): x=${boundingBox.centerX()}, y=${boundingBox.centerY()}")
         Log.d(TAG, "バーコード中心(変換後): x=$barcodeCenterX, y=$barcodeCenterY")
         Log.d(TAG, "バーコード境界: left=${boundingBox.left}, top=${boundingBox.top}, right=${boundingBox.right}, bottom=${boundingBox.bottom}")
         
-        val isInRange = barcodeCenterX >= detectionLeft && 
-               barcodeCenterX <= detectionRight && 
-               barcodeCenterY >= detectionTop && 
-               barcodeCenterY <= detectionBottom
+        // 座標の境界チェック
+        if (barcodeCenterX < 0 || barcodeCenterX >= previewWidth || 
+            barcodeCenterY < 0 || barcodeCenterY >= previewHeight) {
+            Log.w(TAG, "バーコード座標が画面範囲外: x=$barcodeCenterX, y=$barcodeCenterY (画面サイズ: ${previewWidth}x${previewHeight})")
+            return false
+        }
         
+        // バーコード全体が検出エリア内にあるかどうかをチェック
+        // バーコードの中心から幅・高さを計算してスケーリング
+        val barcodeWidth = boundingBox.width()
+        val barcodeHeight = boundingBox.height()
+        
+        // 回転とスケーリングを考慮したバーコードサイズ
+        val scaledWidth: Int
+        val scaledHeight: Int
+        
+        when (rotation) {
+            90, 270 -> {
+                // 90度・270度回転時は元の幅が画面の高さ方向、元の高さが画面の幅方向になる
+                scaledWidth = (barcodeHeight * previewWidth / imageHeight).toInt()
+                scaledHeight = (barcodeWidth * previewHeight / imageWidth).toInt()
+            }
+            else -> {
+                // 0度・180度回転時
+                scaledWidth = (barcodeWidth * previewWidth / imageWidth).toInt()
+                scaledHeight = (barcodeHeight * previewHeight / imageHeight).toInt()
+            }
+        }
+        
+        // 中心点から境界を計算
+        val actualBarcodeLeft = barcodeCenterX - scaledWidth / 2
+        val actualBarcodeTop = barcodeCenterY - scaledHeight / 2
+        val actualBarcodeRight = barcodeCenterX + scaledWidth / 2
+        val actualBarcodeBottom = barcodeCenterY + scaledHeight / 2
+        
+        // 厳密な境界判定
+        val isInRange = actualBarcodeLeft > detectionLeft && 
+               actualBarcodeRight < detectionRight && 
+               actualBarcodeTop > detectionTop && 
+               actualBarcodeBottom < detectionBottom
+        
+        Log.d(TAG, "バーコードサイズ(元): width=${barcodeWidth}, height=${barcodeHeight}")
+        Log.d(TAG, "バーコードサイズ(スケーリング後): width=${scaledWidth}, height=${scaledHeight}")
+        Log.d(TAG, "バーコード全体境界(変換後): left=$actualBarcodeLeft, top=$actualBarcodeTop, right=$actualBarcodeRight, bottom=$actualBarcodeBottom")
         Log.d(TAG, "検出範囲内: $isInRange")
-        Log.d(TAG, "座標チェック詳細:")
-        Log.d(TAG, "  X座標: $barcodeCenterX >= $detectionLeft && $barcodeCenterX <= $detectionRight = ${barcodeCenterX >= detectionLeft && barcodeCenterX <= detectionRight}")
-        Log.d(TAG, "  Y座標: $barcodeCenterY >= $detectionTop && $barcodeCenterY <= $detectionBottom = ${barcodeCenterY >= detectionTop && barcodeCenterY <= detectionBottom}")
+        Log.d(TAG, "境界チェック詳細（厳密判定）:")
+        Log.d(TAG, "  左境界: $actualBarcodeLeft > $detectionLeft = ${actualBarcodeLeft > detectionLeft}")
+        Log.d(TAG, "  右境界: $actualBarcodeRight < $detectionRight = ${actualBarcodeRight < detectionRight}")
+        Log.d(TAG, "  上境界: $actualBarcodeTop > $detectionTop = ${actualBarcodeTop > detectionTop}")
+        Log.d(TAG, "  下境界: $actualBarcodeBottom < $detectionBottom = ${actualBarcodeBottom < detectionBottom}")
         
         return isInRange
     }
