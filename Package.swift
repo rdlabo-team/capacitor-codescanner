@@ -6,7 +6,7 @@ let package = Package(
     platforms: [.iOS(.v15)],
     products: [
         .library(
-            name: "CodeScannerPlugin",
+            name: "RdlaboCapacitorCodescanner",
             targets: ["CodeScannerPlugin"])
     ],
     dependencies: [
