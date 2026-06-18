@@ -21,7 +21,6 @@
     "@angular/core": "^20.0.4",
     "@angular/forms": "^20.0.4",
     "@angular/platform-browser": "^20.0.4",
-    "@angular/platform-browser-dynamic": "^20.0.4",
     "@angular/router": "^20.0.4",
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
