@@ -1,5 +1,6 @@
 {
   "name": "@rdlabo/capacitor-codescanner",
+  "private": false,
   "version": "8.0.3",
   "engines": {
     "node": ">=18.0.0"
