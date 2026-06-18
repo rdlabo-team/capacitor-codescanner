@@ -3,16 +3,15 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
+    "moduleResolution": "bundler",
     "types": [
-      "jasmine"
+      "vitest/globals"
     ]
   },
-  "files": [
-    "src/test.ts",
-    "src/polyfills.ts"
-  ],
   "include": [
     "src/**/*.spec.ts",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "src/polyfills.ts",
+    "src/zone-flags.ts"
   ]
 }
